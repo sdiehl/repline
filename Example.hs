@@ -13,39 +13,67 @@ import Data.List (isPrefixOf)
 import System.Console.Haskeline.Completion
 
 -------------------------------------------------------------------------------
--- Instance
+-- Example1
 -------------------------------------------------------------------------------
 
 type IState = Set.Set String
-type Repl a = HaskelineT (StateT IState IO) a
+type Repl1 a = HaskelineT (StateT IState IO) a
 
 -- Evaluation
-myCmd :: String -> Repl ()
-myCmd input = do
-  modify $ \s -> Set.insert input s
+cmd1 :: String -> Repl1 ()
+cmd1 input = modify $ \s -> Set.insert input s
 
 -- Completion
-myComplete :: MonadState IState m => String -> m [Completion]
-myComplete n = do
+completer1 :: MonadState IState m => String -> m [Completion]
+completer1 n = do
   ns <- get
   let matches = filter (isPrefixOf n) (Set.toList ns)
   return $ map simpleCompletion matches
 
 -- Commands
-cmdHelp :: [String] -> Repl ()
-cmdHelp args = do
-  liftIO $ print $ "Help!" ++ show args
+help1 :: [String] -> Repl1 ()
+help1 args = liftIO $ print $ "Help!" ++ show args
 
-cmdPut :: [String] -> Repl ()
-cmdPut args = do
-  modify $ \s -> Set.fromList ["Haskell"]
+puts1 :: [String] -> Repl1 ()
+puts1 args = modify $ \s -> Set.union s (Set.fromList args)
 
-myOptions :: [(String, [String] -> Repl ())]
-myOptions = [
-    ("help", cmdHelp)
-  , ("put",  cmdPut)
+opts1 :: [(String, [String] -> Repl1 ())]
+opts1 = [
+    ("help", help1) -- :help
+  , ("puts", puts1) -- :puts
   ]
 
-main :: IO ()
-main = flip evalStateT Set.empty
-     $ evalRepl "_proto> " myCmd myOptions myComplete
+-- Tab completion inside of StateT
+main1 :: IO ()
+main1 = flip evalStateT Set.empty
+      $ evalRepl "_proto> " cmd1 opts1 completer1
+
+-------------------------------------------------------------------------------
+-- Example2
+-------------------------------------------------------------------------------
+
+type Repl2 a = HaskelineT IO a
+
+-- Evaluation
+cmd2 :: String -> Repl2 ()
+cmd2 input = liftIO $ print input
+
+-- Completion
+completer2 :: Monad m => String -> m [Completion]
+completer2 n = do
+  let names = ["kirk", "spock", "mccoy"]
+  let matches = filter (isPrefixOf n) names
+  return $ map simpleCompletion matches
+
+-- Commands
+help2 :: [String] -> Repl2 ()
+help2 args = liftIO $ print $ "Help!" ++ show args
+
+myOptions2 :: [(String, [String] -> Repl2 ())]
+myOptions2 = [
+    ("help", help2)
+  ]
+
+-- Flat IO.
+main2 :: IO ()
+main2 = evalRepl "example2> " cmd2 myOptions2 completer2
