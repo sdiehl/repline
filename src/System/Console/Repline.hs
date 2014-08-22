@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Console (
+module System.Console.Repline (
   HaskelineT,
   runHaskelineT,
 

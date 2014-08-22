@@ -20,7 +20,7 @@ Source-Repository head
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Console
+  exposed-modules:     System.Console.Repline
   -- other-modules:       
   build-depends:
     base       >= 4.6 && <4.7,
