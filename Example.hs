@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Example where
+module Main where
 
 import System.Console.Repline
 import System.Console.Haskeline.Completion
@@ -77,3 +77,6 @@ myOptions2 = [
 -- Flat IO.
 main2 :: IO ()
 main2 = evalRepl "example2> " cmd2 myOptions2 completer2
+
+main :: IO ()
+main = main2

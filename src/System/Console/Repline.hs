@@ -14,7 +14,10 @@ module System.Console.Repline (
   Completer,
   Command,
 
+  ReplSettings(..),
+
   evalRepl,
+  evalReplWith,
 ) where
 
 import System.Console.Haskeline.Completion
@@ -33,7 +36,7 @@ newtype HaskelineT m a = HaskelineT {unHaskeline :: H.InputT m a}
  deriving (Monad, Functor, Applicative, MonadIO, MonadException, MonadTrans, MonadHaskeline)
 
 runHaskelineT :: MonadException m => H.Settings m -> HaskelineT m a -> m a
-runHaskelineT s m = H.runInputT s (unHaskeline m)
+runHaskelineT s m = H.runInputT s (loop (unHaskeline m))
 
 class MonadException m => MonadHaskeline m where
   getInputLine :: String -> m (Maybe String)
@@ -66,29 +69,41 @@ type Options m = [(String, Cmd m)]
 type Completer m = (String -> m [Completion])
 type Command m = String -> m ()
 
-replLoop :: MonadHaskeline m => String -> Command m -> Options m -> m ()
+data ReplSettings m = ReplSettings
+  { _cmd      :: Command (HaskelineT m)
+  , _opts     :: Options (HaskelineT m)
+  , _complete :: Completer m
+  , _init     :: m ()
+  , _banner   :: String
+  }
+
+loop :: MonadException m => H.InputT m a -> H.InputT m a
+loop f = H.withInterrupt (H.handleInterrupt (loop f) f)
+
+replLoop :: (MonadHaskeline m, MonadException m) => String -> Command m -> Options m -> m ()
 replLoop banner cmdM opts = do
-  minput <- getInputLine banner
-  case minput of
-    Nothing -> outputStrLn "Goodbye."
+    minput <- getInputLine banner
+    case minput of
+      Nothing -> outputStrLn "Goodbye."
 
-    Just ":" -> do
-      replLoop banner cmdM opts
+      Just ":" -> do
+        replLoop banner cmdM opts
 
-    Just (':' : cmds) -> do
-      let (cmd:args) = words cmds
-      optMatcher cmd opts args
-      replLoop banner cmdM opts
+      Just (':' : cmds) -> do
+        let (cmd:args) = words cmds
+        optMatcher cmd opts args
+        replLoop banner cmdM opts
 
-    Just input -> do
-      cmdM input
-      replLoop banner cmdM opts
+      Just input -> do
+        cmdM input
+        replLoop banner cmdM opts
 
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
 optMatcher s [] _ = outputStrLn $ "No such command :" ++ s
 optMatcher s ((x, m):xs) args
   | s `isPrefixOf` x = m args
   | otherwise = optMatcher s xs args
+
 
 evalRepl :: MonadException m             -- ^ Terminal monad ( often IO ).
          => String                       -- ^ Banner
@@ -101,6 +116,17 @@ evalRepl banner cmd opts comp = runHaskelineT _readline monad
     monad = replLoop banner cmd opts
     _readline = H.Settings
       { H.complete       = completeWord Nothing "  \t()[]" comp
+      , H.historyFile    = Just ".history"
+      , H.autoAddHistory = True
+      }
+
+
+evalReplWith :: MonadException m => ReplSettings m -> m ()
+evalReplWith settings = runHaskelineT _readline monad
+  where
+    monad = replLoop (_banner settings) (_cmd settings) (_opts settings)
+    _readline = H.Settings
+      { H.complete       = completeWord Nothing "  \t()[]" (_complete settings)
       , H.historyFile    = Just ".history"
       , H.autoAddHistory = True
       }
