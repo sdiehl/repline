@@ -4,13 +4,13 @@
 
 module Example where
 
-import Console
+import System.Console.Repline
+import System.Console.Haskeline.Completion
 
 import qualified Data.Set as Set
 import Control.Monad.State.Strict
 
 import Data.List (isPrefixOf)
-import System.Console.Haskeline.Completion
 
 -------------------------------------------------------------------------------
 -- Example1
