@@ -36,7 +36,7 @@ newtype HaskelineT m a = HaskelineT {unHaskeline :: H.InputT m a}
  deriving (Monad, Functor, Applicative, MonadIO, MonadException, MonadTrans, MonadHaskeline)
 
 runHaskelineT :: MonadException m => H.Settings m -> HaskelineT m a -> m a
-runHaskelineT s m = H.runInputT s (loop (unHaskeline m))
+runHaskelineT s m = H.runInputT s (H.withInterrupt (unHaskeline m))
 
 class MonadException m => MonadHaskeline m where
   getInputLine :: String -> m (Maybe String)
@@ -77,26 +77,33 @@ data ReplSettings m = ReplSettings
   , _banner   :: String
   }
 
-loop :: MonadException m => H.InputT m a -> H.InputT m a
-loop f = H.withInterrupt (H.handleInterrupt (loop f) f)
+tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
+tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
+    where loop = handle (\H.Interrupt -> loop) f
 
-replLoop :: (MonadHaskeline m, MonadException m) => String -> Command m -> Options m -> m ()
-replLoop banner cmdM opts = do
-    minput <- getInputLine banner
-    case minput of
-      Nothing -> outputStrLn "Goodbye."
+replLoop :: MonadException m
+         => String
+         -> Command (HaskelineT m)
+         -> Options (HaskelineT m)
+         -> HaskelineT m ()
+replLoop banner cmdM opts = loop
+  where
+    loop = tryAction $ do
+      minput <- getInputLine banner
+      case minput of
+        Nothing -> outputStrLn "Goodbye."
 
-      Just ":" -> do
-        replLoop banner cmdM opts
+        Just ":" -> do
+          loop
 
-      Just (':' : cmds) -> do
-        let (cmd:args) = words cmds
-        optMatcher cmd opts args
-        replLoop banner cmdM opts
+        Just (':' : cmds) -> do
+          let (cmd:args) = words cmds
+          optMatcher cmd opts args
+          loop
 
-      Just input -> do
-        cmdM input
-        replLoop banner cmdM opts
+        Just input -> do
+          cmdM input
+          loop
 
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
 optMatcher s [] _ = outputStrLn $ "No such command :" ++ s
@@ -111,7 +118,7 @@ evalRepl :: MonadException m             -- ^ Terminal monad ( often IO ).
          -> Options (HaskelineT m)       -- ^ Options list and commands
          -> (String -> m [Completion])   -- ^ Tab completion function
          -> m ()
-evalRepl banner cmd opts comp = runHaskelineT _readline monad
+evalRepl banner cmd opts comp = runHaskelineT _readline (tryAction monad)
   where
     monad = replLoop banner cmd opts
     _readline = H.Settings
@@ -122,7 +129,7 @@ evalRepl banner cmd opts comp = runHaskelineT _readline monad
 
 
 evalReplWith :: MonadException m => ReplSettings m -> m ()
-evalReplWith settings = runHaskelineT _readline monad
+evalReplWith settings = runHaskelineT _readline (tryAction monad)
   where
     monad = replLoop (_banner settings) (_cmd settings) (_opts settings)
     _readline = H.Settings
