@@ -1,0 +1,37 @@
+name:                repl
+version:             0.1.0.0
+license:             MIT
+license-file:        LICENSE
+author:              Stephen Diehl
+maintainer:          stephen.m.diehl@gmail.com
+copyright:           2014 Stephen Diehl
+category:            Control
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.20
+tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3
+Bug-Reports:         https://github.com/sdiehl/repl/issues
+
+Description:
+  Haskeline wrapper for GHCi-like REPL interfaces. Composable with normal mtl transformers.
+Source-Repository head
+    Type: git
+    Location: git@github.com:sdiehl/repl.git
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Console
+  -- other-modules:       
+  build-depends:
+    base       >= 4.6 && <4.7,
+    containers >= 0.5 && <0.6,
+    mtl        >= 2.2 && <2.3,
+    haskeline  >= 0.7 && <0.8
+  other-extensions:
+    FlexibleInstances,
+    FlexibleContexts,
+    TypeSynonymInstances,
+    UndecidableInstances,
+    MultiParamTypeClasses,
+    GeneralizedNewtypeDeriving
+  default-language:    Haskell2010
