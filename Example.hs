@@ -46,7 +46,7 @@ opts1 = [
 -- Tab completion inside of StateT
 main1 :: IO ()
 main1 = flip evalStateT Set.empty
-      $ evalRepl "_proto> " cmd1 opts1 completer1
+      $ evalRepl "_proto> " cmd1 opts1 completer1 (return ())
 
 -------------------------------------------------------------------------------
 -- Example2
@@ -76,7 +76,7 @@ myOptions2 = [
 
 -- Flat IO.
 main2 :: IO ()
-main2 = evalRepl "example2> " cmd2 myOptions2 completer2
+main2 = evalRepl "example2> " cmd2 myOptions2 completer2 (return ())
 
 main :: IO ()
 main = main2

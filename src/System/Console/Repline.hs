@@ -14,7 +14,7 @@ module System.Console.Repline (
   Completer,
   Command,
 
-  ReplSettings(..),
+  ReplSettings,
 
   evalRepl,
   evalReplWith,
@@ -88,10 +88,12 @@ replLoop :: MonadException m
          -> HaskelineT m ()
 replLoop banner cmdM opts = loop
   where
-    loop = tryAction $ do
-      minput <- getInputLine banner
+    loop = do
+      minput <- H.handleInterrupt (return (Just "")) $ getInputLine banner
       case minput of
         Nothing -> outputStrLn "Goodbye."
+
+        Just "" -> loop
 
         Just ":" -> do
           loop
@@ -102,7 +104,7 @@ replLoop banner cmdM opts = loop
           loop
 
         Just input -> do
-          cmdM input
+          H.handleInterrupt (liftIO $ putStrLn "Ctrl-C") $ cmdM input
           loop
 
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
@@ -117,8 +119,9 @@ evalRepl :: MonadException m             -- ^ Terminal monad ( often IO ).
          -> Command (HaskelineT m)       -- ^ Command function
          -> Options (HaskelineT m)       -- ^ Options list and commands
          -> (String -> m [Completion])   -- ^ Tab completion function
+         -> HaskelineT m a               -- ^ Initializer
          -> m ()
-evalRepl banner cmd opts comp = runHaskelineT _readline (tryAction monad)
+evalRepl banner cmd opts comp initz = runHaskelineT _readline (initz >> monad)
   where
     monad = replLoop banner cmd opts
     _readline = H.Settings
