@@ -3,9 +3,9 @@
 { cabal, haskeline, mtl }:
 
 cabal.mkDerivation (self: {
-  pname = "repl";
+  pname = "repline";
   version = "0.1.0.0";
-  sha256 = "37d125d63db4453f1c2a12a774aef22fa538a03e5a5a5c9f1bdc9c8e6cf985a4";
+  sha256 = "0da55c00f95261998b5618515ef3663bae0ca3aefb882e312c666d7ac409f6a9";
   buildDepends = [ haskeline mtl ];
   meta = {
     license = self.stdenv.lib.licenses.mit;
