@@ -1,4 +1,4 @@
-name:                repl
+name:                repline
 version:             0.1.0.0
 license:             MIT
 license-file:        LICENSE
@@ -10,13 +10,13 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.20
 tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3
-Bug-Reports:         https://github.com/sdiehl/repl/issues
+Bug-Reports:         https://github.com/sdiehl/repline/issues
 
 Description:
   Haskeline wrapper for GHCi-like REPL interfaces. Composable with normal mtl transformers.
 Source-Repository head
     Type: git
-    Location: git@github.com:sdiehl/repl.git
+    Location: git@github.com:sdiehl/repline.git
 
 library
   hs-source-dirs:      src
