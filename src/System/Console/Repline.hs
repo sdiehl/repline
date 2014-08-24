@@ -1,3 +1,4 @@
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -16,12 +17,13 @@ module System.Console.Repline (
   CompleterStyle(..),
   Command,
 
-  ReplSettings,
+  ReplSettings(ReplSettings),
+  emptySettings,
 
   evalRepl,
   evalReplWith,
 
-  listFiles,
+  listFiles, -- re-export
   trimComplete,
 ) where
 
@@ -37,7 +39,7 @@ import Control.Monad.State.Strict
 -- Haskeline Transformer
 -------------------------------------------------------------------------------
 
-newtype HaskelineT m a = HaskelineT {unHaskeline :: H.InputT m a}
+newtype HaskelineT (m :: * -> *) a = HaskelineT {unHaskeline :: H.InputT m a}
  deriving (Monad, Functor, Applicative, MonadIO, MonadException, MonadTrans, MonadHaskeline)
 
 runHaskelineT :: MonadException m => H.Settings m -> HaskelineT m a -> m a
@@ -84,6 +86,9 @@ data ReplSettings m = ReplSettings
   , _banner    :: String
   }
 
+emptySettings :: MonadHaskeline m => ReplSettings m
+emptySettings = ReplSettings (const $ return ()) [] File (return ()) ""
+
 tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
 tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
     where loop = handle (\H.Interrupt -> loop) f
@@ -101,9 +106,7 @@ replLoop banner cmdM opts = loop
         Nothing -> outputStrLn "Goodbye."
 
         Just "" -> loop
-
-        Just ":" -> do
-          loop
+        Just ":" -> loop
 
         Just (':' : cmds) -> do
           let (cmd:args) = words cmds
@@ -151,15 +154,16 @@ evalReplWith settings = runHaskelineT _readline (tryAction monad)
 -- Completions
 -------------------------------------------------------------------------------
 
-data CompleterStyle m = Word (WordCompleter m)
-                      | Cursor (LineCompleter m)
-                      | File
-                      | Mixed (CompletionFunc m)
+data CompleterStyle m
+  = Word (WordCompleter m)
+  | Cursor (LineCompleter m)
+  | File
+  | Mixed (CompletionFunc m)
 
 mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
 mkCompleter (Word f)   = completeWord (Just '\\') " \t()[]" f
 mkCompleter (Cursor f) = completeWordWithPrev (Just '\\') " \t()[]" f
-mkCompleter (Mixed f) = f
+mkCompleter (Mixed f)  = f
 mkCompleter File       = completeFilename
 
 trimComplete :: String -> Completion -> Completion

@@ -106,12 +106,6 @@ completer3 (start, n) =
         matches <- listFiles ""
         return $ (start, matches)
   else do
-    -- XXX: lift into completeWord
-    case words (reverse (n ++ start)) of
-      [] -> return (start, [])
-      xs -> do
-        matches <- completer2 (head xs)
-        return (start, map (trimComplete (start ++ n)) matches)
     let names = ["kirk", "spock", "mccoy"]
     let matches = filter (isPrefixOf (reverse start)) names
     return $ (start, map (trimComplete start) (map simpleCompletion matches))
