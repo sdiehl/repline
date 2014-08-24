@@ -11,13 +11,18 @@ module System.Console.Repline (
 
   Cmd,
   Options,
-  Completer,
+  WordCompleter,
+  LineCompleter,
+  CompleterStyle(..),
   Command,
 
   ReplSettings,
 
   evalRepl,
   evalReplWith,
+
+  listFiles,
+  trimComplete,
 ) where
 
 import System.Console.Haskeline.Completion
@@ -66,15 +71,17 @@ instance (MonadHaskeline m) => MonadHaskeline (StateT s m) where
 
 type Cmd m = [String] -> m ()
 type Options m = [(String, Cmd m)]
-type Completer m = (String -> m [Completion])
 type Command m = String -> m ()
 
+type WordCompleter m = (String -> m [Completion])
+type LineCompleter m = (String -> String -> m [Completion])
+
 data ReplSettings m = ReplSettings
-  { _cmd      :: Command (HaskelineT m)
-  , _opts     :: Options (HaskelineT m)
-  , _complete :: Completer m
-  , _init     :: m ()
-  , _banner   :: String
+  { _cmd       :: Command (HaskelineT m)
+  , _opts      :: Options (HaskelineT m)
+  , _compstyle :: CompleterStyle m
+  , _init      :: m ()
+  , _banner    :: String
   }
 
 tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
@@ -118,25 +125,49 @@ evalRepl :: MonadException m             -- ^ Terminal monad ( often IO ).
          => String                       -- ^ Banner
          -> Command (HaskelineT m)       -- ^ Command function
          -> Options (HaskelineT m)       -- ^ Options list and commands
-         -> (String -> m [Completion])   -- ^ Tab completion function
+         -> CompleterStyle m             -- ^ Tab completion function
          -> HaskelineT m a               -- ^ Initializer
          -> m ()
 evalRepl banner cmd opts comp initz = runHaskelineT _readline (initz >> monad)
   where
     monad = replLoop banner cmd opts
     _readline = H.Settings
-      { H.complete       = completeWord Nothing "  \t()[]" comp
+      { H.complete       = mkCompleter comp
       , H.historyFile    = Just ".history"
       , H.autoAddHistory = True
       }
-
 
 evalReplWith :: MonadException m => ReplSettings m -> m ()
 evalReplWith settings = runHaskelineT _readline (tryAction monad)
   where
     monad = replLoop (_banner settings) (_cmd settings) (_opts settings)
     _readline = H.Settings
-      { H.complete       = completeWord Nothing "  \t()[]" (_complete settings)
+      { H.complete       = mkCompleter (_compstyle settings)
       , H.historyFile    = Just ".history"
       , H.autoAddHistory = True
       }
+
+-------------------------------------------------------------------------------
+-- Completions
+-------------------------------------------------------------------------------
+
+data CompleterStyle m = Word (WordCompleter m)
+                      | Cursor (LineCompleter m)
+                      | File
+                      | Mixed (CompletionFunc m)
+
+mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
+mkCompleter (Word f)   = completeWord (Just '\\') " \t()[]" f
+mkCompleter (Cursor f) = completeWordWithPrev (Just '\\') " \t()[]" f
+mkCompleter (Mixed f) = f
+mkCompleter File       = completeFilename
+
+
+wordsWhen :: (Char -> Bool) -> String -> [String]
+wordsWhen p s =  case dropWhile p s of
+                      "" -> []
+                      s' -> w : wordsWhen p s''
+                            where (w, s'') = break p s'
+
+trimComplete :: String -> Completion -> Completion
+trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b True
