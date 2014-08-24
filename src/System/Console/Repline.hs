@@ -162,12 +162,5 @@ mkCompleter (Cursor f) = completeWordWithPrev (Just '\\') " \t()[]" f
 mkCompleter (Mixed f) = f
 mkCompleter File       = completeFilename
 
-
-wordsWhen :: (Char -> Bool) -> String -> [String]
-wordsWhen p s =  case dropWhile p s of
-                      "" -> []
-                      s' -> w : wordsWhen p s''
-                            where (w, s'') = break p s'
-
 trimComplete :: String -> Completion -> Completion
-trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b True
+trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b c
