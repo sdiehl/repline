@@ -5,7 +5,7 @@
 cabal.mkDerivation (self: {
   pname = "repline";
   version = "0.1.0.0";
-  sha256 = "0da55c00f95261998b5618515ef3663bae0ca3aefb882e312c666d7ac409f6a9";
+  sha256 = "5e40fabee2825e5c18c1fdab338960d568d9a0dd7175cc6b13120f65a67567e2";
   buildDepends = [ haskeline mtl ];
   meta = {
     license = self.stdenv.lib.licenses.mit;
