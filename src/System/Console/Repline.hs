@@ -39,7 +39,7 @@ import Control.Monad.State.Strict
 -- Haskeline Transformer
 -------------------------------------------------------------------------------
 
-newtype HaskelineT (m :: * -> *) a = HaskelineT {unHaskeline :: H.InputT m a}
+newtype HaskelineT (m :: * -> *) a = HaskelineT { unHaskeline :: H.InputT m a }
  deriving (Monad, Functor, Applicative, MonadIO, MonadException, MonadTrans, MonadHaskeline)
 
 runHaskelineT :: MonadException m => H.Settings m -> HaskelineT m a -> m a
@@ -93,6 +93,7 @@ tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
 tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
     where loop = handle (\H.Interrupt -> loop) f
 
+-- | Completion loop.
 replLoop :: MonadException m
          => String
          -> Command (HaskelineT m)
@@ -117,13 +118,14 @@ replLoop banner cmdM opts = loop
           H.handleInterrupt (liftIO $ putStrLn "Ctrl-C") $ cmdM input
           loop
 
+-- | Match the options.
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
 optMatcher s [] _ = outputStrLn $ "No such command :" ++ s
 optMatcher s ((x, m):xs) args
   | s `isPrefixOf` x = m args
   | otherwise = optMatcher s xs args
 
-
+-- | Evaluate the REPL logic into a MonadException context.
 evalRepl :: MonadException m             -- ^ Terminal monad ( often IO ).
          => String                       -- ^ Banner
          -> Command (HaskelineT m)       -- ^ Command function
@@ -140,6 +142,7 @@ evalRepl banner cmd opts comp initz = runHaskelineT _readline (initz >> monad)
       , H.autoAddHistory = True
       }
 
+-- | Evaluate the REPL logic with the settings record.
 evalReplWith :: MonadException m => ReplSettings m -> m ()
 evalReplWith settings = runHaskelineT _readline (tryAction monad)
   where
@@ -155,16 +158,16 @@ evalReplWith settings = runHaskelineT _readline (tryAction monad)
 -------------------------------------------------------------------------------
 
 data CompleterStyle m
-  = Word (WordCompleter m)
-  | Cursor (LineCompleter m)
-  | File
-  | Mixed (CompletionFunc m)
+  = Word (WordCompleter m)       -- ^ Completion function takes single word.
+  | Cursor (LineCompleter m)     -- ^ Completion function takes tuple of full line.
+  | File                         -- ^ Completion function completes files in CWD.
+  | Mixed (CompletionFunc m)     -- ^ Function manually manipulates readline result.
 
 mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
 mkCompleter (Word f)   = completeWord (Just '\\') " \t()[]" f
 mkCompleter (Cursor f) = completeWordWithPrev (Just '\\') " \t()[]" f
-mkCompleter (Mixed f)  = f
 mkCompleter File       = completeFilename
+mkCompleter (Mixed f)  = f
 
 trimComplete :: String -> Completion -> Completion
 trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b c
