@@ -1,14 +1,10 @@
-Repline
--------
+import Control.Monad.Trans
+import System.Console.Repline
+import System.Console.Haskeline.Completion
 
-Slightly higher level wrapper Haskell for creating GHCi-like REPL monads that are composable with normal mtl
-transformers. Mostly exists because I got tired of implementing the same interface for simple shells over and
-over, and because vanilla Haskeline has a kind of quirky API.
+import System.Cmd
+import Data.List (isPrefixOf)
 
-Usage
------
-
-```haskell
 type Repl a = HaskelineT IO a
 
 -- Evaluation : handle each line user inputs
@@ -45,35 +41,3 @@ ini = liftIO $ putStrLn "Welcome!"
 
 main :: IO ()
 main = evalRepl ">>> " cmd options (Word completer) ini
-```
-
-Trying it out:
-
-```haskell
-$ runhaskell Main.hs
-Welcome!
->>> ^TAB
-kirk spock mccoy
-
->>> k^TAB
-kirk
-
->>> spam
-"spam"
-
->>> :say Hello Haskell
- _______________ 
-< Hello Haskell >
- --------------- 
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
-                ||----w |
-                ||     ||
-```
-
-License
--------
-
-Copyright (c) 2014, Stephen Diehl
-Released under the MIT License

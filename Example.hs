@@ -128,4 +128,4 @@ repl3 :: IO ()
 repl3 = evalRepl "example3> " cmd3 myOptions3 (Mixed completer3) init3
 
 main :: IO ()
-main = repl3
+main = repl2
