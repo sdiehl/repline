@@ -13,14 +13,18 @@ aspects of composing Haskeline with State and Exception monads in modern version
 
 > type Repl a = HaskelineT IO a
 
-The evaluator 'evalRepl' evaluates a 'HaskelineT' monad transform by constructing a shell with several
-functions and evaluating it with these functions inside of IO.
+The evaluator 'evalRepl' evaluates a 'HaskelineT' monad transformer by constructing a shell with several
+custom functions and evaluating it inside of IO:
 
-- Commands: Handled on ordinary input.
-- Completions: Handled when tab key is pressed.
-- Options: Handled when a command prefixed by a colon is entered.
-- Banner: Text Displayed at initialization.
-- Initializer: Run at initialization.
+  * Commands: Handled on ordinary input.
+
+  * Completions: Handled when tab key is pressed.
+
+  * Options: Handled when a command prefixed by a colon is entered.
+
+  * Banner: Text Displayed at initialization.
+
+  * Initializer: Run at initialization.
 
 A simple evaluation function might simply echo the output back to the screen.
 
@@ -69,6 +73,29 @@ Putting it all together we have a little shell.
 
 > main :: IO ()
 > main = evalRepl ">>> " cmd options (Word completer) ini
+
+Putting this in a file we can test out our cow-trek shell.
+
+> $ runhaskell Main.hs
+> Welcome!
+> >>> <TAB>
+> kirk spock mccoy
+>
+> >>> k<TAB>
+> kirk
+>
+> >>> spam
+> "spam"
+>
+> >>> :say Hello Haskell
+>  _______________
+> < Hello Haskell >
+>  ---------------
+>         \   ^__^
+>          \  (oo)\_______
+>             (__)\       )\/\
+>                 ||----w |
+>                 ||     ||
 
 See <https://github.com/sdiehl/repline> for more examples.
 

@@ -5,6 +5,8 @@ Slightly higher level wrapper for creating GHCi-like REPL monads that are compos
 transformers. Mostly exists because I got tired of implementing the same interface for simple shells over and
 over, and because vanilla Haskeline has a kind of quirky API.
 
+[![Build Status](https://travis-ci.org/sdiehl/repline.svg)](https://travis-ci.org/sdiehl/repline)
+
 Usage
 -----
 
@@ -70,6 +72,13 @@ kirk
             (__)\       )\/\
                 ||----w |
                 ||     ||
+```
+
+Installation
+------------
+
+```bash
+$ cabal install repline
 ```
 
 License
