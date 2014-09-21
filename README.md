@@ -54,10 +54,10 @@ Trying it out:
 ```haskell
 $ runhaskell Main.hs
 Welcome!
->>> ^TAB
+>>> <TAB>
 kirk spock mccoy
 
->>> k^TAB
+>>> k<TAB>
 kirk
 
 >>> spam
