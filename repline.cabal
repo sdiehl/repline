@@ -1,5 +1,6 @@
 name:                repline
 version:             0.1.0.0
+synopsis:            Haskeline wrapper for GHCi-like REPL interfaces.
 license:             MIT
 license-file:        LICENSE
 author:              Stephen Diehl
