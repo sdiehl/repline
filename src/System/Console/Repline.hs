@@ -6,6 +6,74 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+{- |
+
+Repline exposes an additional monad transformer on top of Haskeline called 'HaskelineT'. It simplifies several
+aspects of composing Haskeline with State and Exception monads in modern versions of mtl.
+
+> type Repl a = HaskelineT IO a
+
+The evaluator 'evalRepl' evaluates a 'HaskelineT' monad transform by constructing a shell with several
+functions and evaluating it with these functions inside of IO.
+
+- Commands: Handled on ordinary input.
+- Completions: Handled when tab key is pressed.
+- Options: Handled when a command prefixed by a colon is entered.
+- Banner: Text Displayed at initialization.
+- Initializer: Run at initialization.
+
+A simple evaluation function might simply echo the output back to the screen.
+
+> -- Evaluation : handle each line user inputs
+> cmd :: String -> Repl ()
+> cmd input = liftIO $ print input
+
+Several tab completion options are available, the most common is the 'WordCompleter' which completes on single
+words separated by spaces from a list of matches. The internal logic can be whatever is required and can also
+access a StateT instance to query application state.
+
+> -- Tab Completion: return a completion for partial words entered
+> completer :: Monad m => WordCompleter m
+> completer n = do
+>   let names = ["kirk", "spock", "mccoy"]
+>   let matches = filter (isPrefixOf n) names
+>   return $ map simpleCompletion matches
+
+Input which is prefixed by a colon (commands like \":type\" and \":help\") queries an association list of
+functions which map to custom logic. The function takes a space-separated list of augments in it's first
+argument. If the entire line is desired then the 'unwords' function can be used to concatenate.
+
+> -- Commands
+> help :: [String] -> Repl ()
+> help args = liftIO $ print $ "Help: " ++ show args
+>
+> say :: [String] -> Repl ()
+> say args = do
+>   _ <- liftIO $ system $ "cowsay" ++ " " ++ (unwords args)
+>   return ()
+
+Now we need only map these functions to their commands.
+
+> options :: [(String, [String] -> Repl ())]
+> options = [
+>     ("help", help)  -- :help
+>   , ("say", say)    -- :say
+>   ]
+
+The banner function is simply an IO action that is called at the start of the shell.
+
+> ini :: Repl ()
+> ini = liftIO $ putStrLn "Welcome!"
+
+Putting it all together we have a little shell.
+
+> main :: IO ()
+> main = evalRepl ">>> " cmd options (Word completer) ini
+
+See <https://github.com/sdiehl/repline> for more examples.
+
+-}
+
 module System.Console.Repline (
   HaskelineT,
   runHaskelineT,
@@ -17,11 +85,11 @@ module System.Console.Repline (
   CompleterStyle(..),
   Command,
 
-  ReplSettings(ReplSettings),
-  emptySettings,
+  --ReplSettings(ReplSettings),
+  --emptySettings,
 
   evalRepl,
-  evalReplWith,
+  --evalReplWith,
 
   listFiles, -- re-export
   trimComplete,
@@ -79,16 +147,17 @@ type WordCompleter m = (String -> m [Completion])
 type LineCompleter m = (String -> String -> m [Completion])
 
 data ReplSettings m = ReplSettings
-  { _cmd       :: Command (HaskelineT m)
-  , _opts      :: Options (HaskelineT m)
-  , _compstyle :: CompleterStyle m
-  , _init      :: m ()
-  , _banner    :: String
+  { _cmd       :: Command (HaskelineT m) -- ^ Command function
+  , _opts      :: Options (HaskelineT m) -- ^ Options map
+  , _compstyle :: CompleterStyle m       -- ^ Internal completer function
+  , _init      :: m ()                   -- ^ Initializer function.
+  , _banner    :: String                 -- ^ Banner string
   }
 
 emptySettings :: MonadHaskeline m => ReplSettings m
 emptySettings = ReplSettings (const $ return ()) [] File (return ()) ""
 
+-- | Wrap a HasklineT action so that if an interrupt is thrown the shell continues as normal.
 tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
 tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
     where loop = handle (\H.Interrupt -> loop) f
@@ -126,7 +195,7 @@ optMatcher s ((x, m):xs) args
   | otherwise = optMatcher s xs args
 
 -- | Evaluate the REPL logic into a MonadException context.
-evalRepl :: MonadException m             -- ^ Terminal monad ( often IO ).
+evalRepl :: MonadException m             -- Terminal monad ( often IO ).
          => String                       -- ^ Banner
          -> Command (HaskelineT m)       -- ^ Command function
          -> Options (HaskelineT m)       -- ^ Options list and commands

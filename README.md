@@ -1,7 +1,7 @@
 Repline
 -------
 
-Slightly higher level wrapper Haskell for creating GHCi-like REPL monads that are composable with normal mtl
+Slightly higher level wrapper for creating GHCi-like REPL monads that are composable with normal MTL
 transformers. Mostly exists because I got tired of implementing the same interface for simple shells over and
 over, and because vanilla Haskeline has a kind of quirky API.
 
