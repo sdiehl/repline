@@ -1,11 +1,13 @@
 Repline
 -------
 
+[![Build Status](https://travis-ci.org/sdiehl/repline.svg)](https://travis-ci.org/sdiehl/repline)
+[![Hackage](https://img.shields.io/hackage/v/repline.svg)](https://hackage.haskell.org/package/repline)
+
 Slightly higher level wrapper for creating GHCi-like REPL monads that are composable with normal MTL
 transformers. Mostly exists because I got tired of implementing the same interface for simple shells over and
 over, and because vanilla Haskeline has a kind of quirky API.
 
-[![Build Status](https://travis-ci.org/sdiehl/repline.svg)](https://travis-ci.org/sdiehl/repline)
 
 Usage
 -----
