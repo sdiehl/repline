@@ -41,8 +41,7 @@ access a StateT instance to query application state.
 > completer :: Monad m => WordCompleter m
 > completer n = do
 >   let names = ["kirk", "spock", "mccoy"]
->   let matches = filter (isPrefixOf n) names
->   return $ map simpleCompletion matches
+>   return $ filter (isPrefixOf n) names
 
 Input which is prefixed by a colon (commands like \":type\" and \":help\") queries an association list of
 functions which map to custom logic. The function takes a space-separated list of augments in it's first
