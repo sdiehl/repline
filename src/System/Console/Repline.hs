@@ -118,6 +118,7 @@ module System.Console.Repline (
   wordCompleter,
   listCompleter,
   fileCompleter,
+  listWordCompleter,
 
   runMatcher,
   evalRepl,
@@ -265,6 +266,9 @@ wordCompleter f (start, n) = (completeWord (Just '\\') " \t()[]" (_simpleComplet
 
 listCompleter :: Monad m => [String] -> CompletionFunc m
 listCompleter names (start, n) = completeWord (Just '\\') " \t()[]" (_simpleComplete (complete_aux names)) (start, n)
+
+listWordCompleter :: Monad m => [String] -> WordCompleter m
+listWordCompleter = complete_aux
 
 fileCompleter :: MonadIO m => CompletionFunc m
 fileCompleter = completeFilename

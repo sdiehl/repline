@@ -26,7 +26,7 @@ cmd1 input = modify $ Set.insert input
 completer1 :: (Monad m, MonadState IState m) => WordCompleter m
 completer1 n = do
   ns <- get
-  return  $ filter (isPrefixOf n) (Set.toList ns)
+  return $ filter (isPrefixOf n) (Set.toList ns)
 
 -- Commands
 help1 :: [String] -> Repl1 ()
@@ -61,9 +61,7 @@ cmd2 input = liftIO $ print input
 
 -- Completion
 comp2 :: Monad m => WordCompleter m
-comp2 n = do
-  let names = ["kirk", "spock", "mccoy"]
-  return $ filter (isPrefixOf n) names
+comp2 = listWordCompleter ["kirk", "spock", "mccoy"]
 
 -- Commands
 help2 :: [String] -> Repl2 ()
