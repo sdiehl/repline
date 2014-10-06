@@ -20,7 +20,7 @@ type Repl1 a = HaskelineT (StateT IState IO) a
 
 -- Evaluation
 cmd1 :: String -> Repl1 ()
-cmd1 input = modify $ \s -> Set.insert input s
+cmd1 input = modify $ Set.insert input
 
 -- Completion
 completer1 :: (Monad m, MonadState IState m) => WordCompleter m
@@ -33,7 +33,7 @@ help1 :: [String] -> Repl1 ()
 help1 args = liftIO $ print $ "Help!" ++ show args
 
 puts1 :: [String] -> Repl1 ()
-puts1 args = modify $ \s -> Set.union s (Set.fromList args)
+puts1 args = modify $ Set.union (Set.fromList args)
 
 opts1 :: [(String, [String] -> Repl1 ())]
 opts1 = [
