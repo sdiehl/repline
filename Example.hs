@@ -5,7 +5,6 @@
 module Main where
 
 import System.Console.Repline
-import System.Console.Haskeline.Completion
 
 import qualified Data.Set as Set
 import Control.Monad.State.Strict
@@ -27,8 +26,7 @@ cmd1 input = modify $ \s -> Set.insert input s
 completer1 :: (Monad m, MonadState IState m) => WordCompleter m
 completer1 n = do
   ns <- get
-  let matches = filter (isPrefixOf n) (Set.toList ns)
-  return $ map simpleCompletion matches
+  return  $ filter (isPrefixOf n) (Set.toList ns)
 
 -- Commands
 help1 :: [String] -> Repl1 ()
@@ -52,7 +50,7 @@ repl1 = flip evalStateT Set.empty
       $ evalRepl "_proto> " cmd1 opts1 (Word completer1) init1
 
 -------------------------------------------------------------------------------
--- Flat IO
+-- Command options
 -------------------------------------------------------------------------------
 
 type Repl2 a = HaskelineT IO a
@@ -62,18 +60,17 @@ cmd2 :: String -> Repl2 ()
 cmd2 input = liftIO $ print input
 
 -- Completion
-completer2 :: Monad m => WordCompleter m
-completer2 n = do
+comp2 :: Monad m => WordCompleter m
+comp2 n = do
   let names = ["kirk", "spock", "mccoy"]
-  let matches = filter (isPrefixOf n) names
-  return $ map simpleCompletion matches
+  return $ filter (isPrefixOf n) names
 
 -- Commands
 help2 :: [String] -> Repl2 ()
 help2 args = liftIO $ print $ "Help!" ++ show args
 
-myOptions2 :: [(String, [String] -> Repl2 ())]
-myOptions2 = [
+opts2 :: [(String, [String] -> Repl2 ())]
+opts2 = [
     ("help", help2)
   ]
 
@@ -81,7 +78,7 @@ init2 :: Repl2 ()
 init2 = liftIO $ putStrLn "Welcome!"
 
 repl2 :: IO ()
-repl2 = evalRepl "example2> " cmd2 myOptions2 (Word completer2) init2
+repl2 = evalRepl "example2> " cmd2 opts2 (Word comp2) init2
 
 -------------------------------------------------------------------------------
 -- Mixed Completion
@@ -93,39 +90,42 @@ type Repl3 a = HaskelineT IO a
 cmd3 :: String -> Repl2 ()
 cmd3 input = liftIO $ print input
 
--- Completion
-completer3 :: MonadIO m => CompletionFunc m
-completer3 (start, n) =
-  if ":file" `isPrefixOf` (reverse start)
-  then do
-    case words (reverse start) of
-      (":file": xs) -> do
-        matches <- listFiles (concat xs)
-        return $ (start, map (trimComplete (concat xs)) matches)
-      _ -> do
-        matches <- listFiles ""
-        return $ (start, matches)
-  else do
-    let names = ["kirk", "spock", "mccoy"]
-    let matches = filter (isPrefixOf (reverse start)) names
-    return $ (start, map (trimComplete start) (map simpleCompletion matches))
+defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
+defaultMatcher = [
+    (":file"    , fileCompleter)
+  , (":holiday" , listCompleter ["christmas", "thanksgiving", "festivus"])
+  ]
 
--- Commands
-file3 :: [String] -> Repl2 ()
-file3 args = liftIO $ do
+byWord :: Monad m => WordCompleter m
+byWord n = do
+  let names = ["picard", "riker", "data", ":file", ":holiday"]
+  return $ filter (isPrefixOf n) names
+
+files :: [String] -> Repl2 ()
+files args = liftIO $ do
   contents <- readFile (unwords args)
   putStrLn contents
 
-myOptions3 :: [(String, [String] -> Repl2 ())]
-myOptions3 = [
-    ("file", file3)
+holidays :: [String] -> Repl2 ()
+holidays [] = liftIO $ putStrLn "Enter a holiday."
+holidays xs = liftIO $ do
+  putStrLn $ "Happy " ++ unwords xs ++ "!"
+
+opts3 :: [(String, [String] -> Repl2 ())]
+opts3 = [
+    ("file", files)
+  , ("holiday", holidays)
   ]
 
 init3 :: Repl3 ()
 init3 = return ()
 
 repl3 :: IO ()
-repl3 = evalRepl "example3> " cmd3 myOptions3 (Mixed completer3) init3
+repl3 = evalRepl "example3> " cmd3 opts3 (Prefix (wordCompleter byWord) defaultMatcher) init3
+
+-------------------------------------------------------------------------------
+--
+-------------------------------------------------------------------------------
 
 main :: IO ()
-main = repl2
+main = repl1 >> repl2 >> repl3

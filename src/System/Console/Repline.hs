@@ -5,6 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 {- |
 
@@ -112,13 +113,15 @@ module System.Console.Repline (
   CompleterStyle(..),
   Command,
 
-  --ReplSettings(ReplSettings),
-  --emptySettings,
+  CompletionFunc, -- re-export
 
+  wordCompleter,
+  listCompleter,
+  fileCompleter,
+
+  runMatcher,
   evalRepl,
-  --evalReplWith,
 
-  listFiles, -- re-export
   trimComplete,
 ) where
 
@@ -170,19 +173,8 @@ type Cmd m = [String] -> m ()
 type Options m = [(String, Cmd m)]
 type Command m = String -> m ()
 
-type WordCompleter m = (String -> m [Completion])
+type WordCompleter m = (String -> m [String])
 type LineCompleter m = (String -> String -> m [Completion])
-
-data ReplSettings m = ReplSettings
-  { _cmd       :: Command (HaskelineT m) -- ^ Command function
-  , _opts      :: Options (HaskelineT m) -- ^ Options map
-  , _compstyle :: CompleterStyle m       -- ^ Internal completer function
-  , _init      :: m ()                   -- ^ Initializer function.
-  , _banner    :: String                 -- ^ Banner string
-  }
-
-emptySettings :: MonadHaskeline m => ReplSettings m
-emptySettings = ReplSettings (const $ return ()) [] File (return ()) ""
 
 -- | Wrap a HasklineT action so that if an interrupt is thrown the shell continues as normal.
 tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
@@ -238,32 +230,59 @@ evalRepl banner cmd opts comp initz = runHaskelineT _readline (initz >> monad)
       , H.autoAddHistory = True
       }
 
--- | Evaluate the REPL logic with the settings record.
-evalReplWith :: MonadException m => ReplSettings m -> m ()
-evalReplWith settings = runHaskelineT _readline (tryAction monad)
-  where
-    monad = replLoop (_banner settings) (_cmd settings) (_opts settings)
-    _readline = H.Settings
-      { H.complete       = mkCompleter (_compstyle settings)
-      , H.historyFile    = Just ".history"
-      , H.autoAddHistory = True
-      }
-
 -------------------------------------------------------------------------------
 -- Completions
 -------------------------------------------------------------------------------
+
+--type CompletionFunc m = (String, String) -> m (String, [Completion])
 
 data CompleterStyle m
   = Word (WordCompleter m)       -- ^ Completion function takes single word.
   | Cursor (LineCompleter m)     -- ^ Completion function takes tuple of full line.
   | File                         -- ^ Completion function completes files in CWD.
-  | Mixed (CompletionFunc m)     -- ^ Function manually manipulates readline result.
+  | Prefix                       -- ^ Conditional tab completion based on prefix.
+      (CompletionFunc m)
+      [(String, CompletionFunc m)]
 
 mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
-mkCompleter (Word f)   = completeWord (Just '\\') " \t()[]" f
-mkCompleter (Cursor f) = completeWordWithPrev (Just '\\') " \t()[]" f
-mkCompleter File       = completeFilename
-mkCompleter (Mixed f)  = f
+mkCompleter (Word f)          = completeWord (Just '\\') " \t()[]" (_simpleComplete f)
+mkCompleter (Cursor f)        = completeWordWithPrev (Just '\\') " \t()[]" (unRev0 f)
+mkCompleter File              = completeFilename
+mkCompleter (Prefix def opts) = runMatcher opts def
+
+-- haskeline takes the first argument as the reversed string, don't know why
+unRev0 :: LineCompleter m -> LineCompleter m
+unRev0 f x y = f (reverse x) y
 
 trimComplete :: String -> Completion -> Completion
 trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b c
+
+_simpleComplete :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
+_simpleComplete f word = f word >>= return . map simpleCompletion
+
+wordCompleter :: Monad m => WordCompleter m -> CompletionFunc m
+wordCompleter f (start, n) = (completeWord (Just '\\') " \t()[]" (_simpleComplete f)) (start, n)
+
+listCompleter :: Monad m => [String] -> CompletionFunc m
+listCompleter names (start, n) = completeWord (Just '\\') " \t()[]" (_simpleComplete (complete_aux names)) (start, n)
+
+fileCompleter :: MonadIO m => CompletionFunc m
+fileCompleter = completeFilename
+
+complete_aux :: Monad m => [String] -> WordCompleter m
+complete_aux names n = return $ filter (isPrefixOf n) names
+
+completeMatcher :: (Monad m) => CompletionFunc m -> String
+                             -> [(String, CompletionFunc m)]
+                             -> CompletionFunc m
+completeMatcher def _ [] args = def args
+completeMatcher def [] _ args = def args
+completeMatcher def s ((x, f):xs) args
+  | x `isPrefixOf` s = f args
+  | otherwise = completeMatcher def s xs args
+
+runMatcher :: Monad m => [(String, CompletionFunc m)]
+                      -> CompletionFunc m
+                      -> CompletionFunc m
+runMatcher opts def (start, n) = do
+  (completeMatcher def (n ++ reverse start) opts) (start, n)
