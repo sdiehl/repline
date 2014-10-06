@@ -108,7 +108,7 @@ ini = return ()
 -- Tab completion inside of StateT
 repl :: IO ()
 repl = flip evalStateT Set.empty
-      $ evalRepl "_proto> " cmd opts (Word comp) init
+     $ evalRepl "_proto> " cmd opts (Word comp) init
 ```
 
 Mixed Completion

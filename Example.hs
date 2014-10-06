@@ -85,7 +85,7 @@ repl2 = evalRepl "example2> " cmd2 opts2 (Word comp2) init2
 type Repl3 a = HaskelineT IO a
 
 -- Evaluation
-cmd3 :: String -> Repl2 ()
+cmd3 :: String -> Repl3 ()
 cmd3 input = liftIO $ print input
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
@@ -99,17 +99,17 @@ byWord n = do
   let names = ["picard", "riker", "data", ":file", ":holiday"]
   return $ filter (isPrefixOf n) names
 
-files :: [String] -> Repl2 ()
+files :: [String] -> Repl3 ()
 files args = liftIO $ do
   contents <- readFile (unwords args)
   putStrLn contents
 
-holidays :: [String] -> Repl2 ()
+holidays :: [String] -> Repl3 ()
 holidays [] = liftIO $ putStrLn "Enter a holiday."
 holidays xs = liftIO $ do
   putStrLn $ "Happy " ++ unwords xs ++ "!"
 
-opts3 :: [(String, [String] -> Repl2 ())]
+opts3 :: [(String, [String] -> Repl3 ())]
 opts3 = [
     ("file", files)
   , ("holiday", holidays)
