@@ -163,7 +163,7 @@ init :: Repl ()
 init = return ()
 
 repl :: IO ()
-repl = evalRepl ">> " cmd3 opts (Prefix (wordCompleter byWord) defaultMatcher) init
+repl = evalRepl ">> " cmd opts (Prefix (wordCompleter byWord) defaultMatcher) init
 ```
 
 Trying it out:
