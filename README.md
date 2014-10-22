@@ -75,6 +75,10 @@ kirk
 Stateful Tab Completion
 -----------------------
 
+Quite often tab completion is dependent on the internal state of the Repl so we'd like to query state of the
+interpreter for tab completions based on actions performed themselves within the Repl, this is modeleted
+naturally as a monad transformer stack with ``StateT`` on top of ``HaskelineT``.
+
 ```haskell
 type IState = Set.Set String
 type Repl a = HaskelineT (StateT IState IO) a
@@ -108,11 +112,72 @@ ini = return ()
 -- Tab completion inside of StateT
 repl :: IO ()
 repl = flip evalStateT Set.empty
-     $ evalRepl "_proto> " cmd opts (Word comp) init
+     $ evalRepl ">>> " cmd opts (Word comp) init
 ```
 
-Mixed Completion
+
+Prefix Completion
 ----------------
+
+Just as GHCi will provide different tab completion for kind-level vs type-level symbols based on which prefix
+the user has entered, we can also set up a provide this as a first-level construct using a ``Prefix`` tab
+completer which takes care of the string matching behind the API.
+
+```haskell
+type Repl a = HaskelineT IO a
+
+-- Evaluation
+cmd :: String -> Repl ()
+cmd input = liftIO $ print input
+
+-- Prefix tab completeter
+defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
+defaultMatcher = [
+    (":file"    , fileCompleter)
+  , (":holiday" , listCompleter ["christmas", "thanksgiving", "festivus"])
+  ]
+
+-- Default tab completer
+byWord :: Monad m => WordCompleter m
+byWord n = do
+  let names = ["picard", "riker", "data", ":file", ":holiday"]
+  return $ filter (isPrefixOf n) names
+
+files :: [String] -> Repl ()
+files args = liftIO $ do
+  contents <- readFile (unwords args)
+  putStrLn contents
+
+holidays :: [String] -> Repl ()
+holidays [] = liftIO $ putStrLn "Enter a holiday."
+holidays xs = liftIO $ do
+  putStrLn $ "Happy " ++ unwords xs ++ "!"
+
+opts :: [(String, [String] -> Repl ())]
+opts = [
+    ("file", files)
+  , ("holiday", holidays)
+  ]
+
+init :: Repl ()
+init = return ()
+
+repl :: IO ()
+repl = evalRepl ">> " cmd3 opts (Prefix (wordCompleter byWord) defaultMatcher) init
+```
+
+Trying it out:
+
+```haskell
+$ runhaskell Main.hs
+>>> :file <TAB>
+sample1.txt sample2.txt
+
+>>> :file sample1.txt
+
+>>> :holiday <TAB>
+christmas thanksgiving festivus
+```
 
 Installation
 ------------
