@@ -121,6 +121,7 @@ module System.Console.Repline (
 
   runMatcher,
   evalRepl,
+  abort,
 
   trimComplete,
 ) where
@@ -181,6 +182,10 @@ tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
 tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
     where loop = handle (\H.Interrupt -> loop) f
 
+-- | Abort the current REPL loop, and continue.
+abort :: MonadIO m => HaskelineT m a
+abort = throwIO H.Interrupt
+
 -- | Completion loop.
 replLoop :: MonadException m
          => String
@@ -203,7 +208,7 @@ replLoop banner cmdM opts = loop
           loop
 
         Just input -> do
-          H.handleInterrupt (liftIO $ putStrLn "Ctrl-C") $ cmdM input
+          H.handleInterrupt (return ()) $ cmdM input
           loop
 
 -- | Match the options.
