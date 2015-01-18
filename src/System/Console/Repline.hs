@@ -245,9 +245,9 @@ data CompleterStyle m
   = Word (WordCompleter m)       -- ^ Completion function takes single word.
   | Cursor (LineCompleter m)     -- ^ Completion function takes tuple of full line.
   | File                         -- ^ Completion function completes files in CWD.
-  | Prefix                       -- ^ Conditional tab completion based on prefix.
+  | Prefix
       (CompletionFunc m)
-      [(String, CompletionFunc m)]
+      [(String, CompletionFunc m)] -- ^ Conditional tab completion based on prefix.
 
 mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
 mkCompleter (Word f)          = completeWord (Just '\\') " \t()[]" (_simpleComplete f)

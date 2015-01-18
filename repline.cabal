@@ -24,7 +24,7 @@ library
   exposed-modules:     System.Console.Repline
   -- other-modules:       
   build-depends:
-    base       >= 4.6 && <4.7,
+    base       >= 4.6 && <4.8,
     containers >= 0.5 && <0.6,
     mtl        >= 2.2 && <2.3,
     haskeline  >= 0.7 && <0.8
