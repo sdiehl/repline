@@ -1,5 +1,5 @@
 name:                repline
-version:             0.1.2.0
+version:             0.1.3.0
 synopsis:            Haskeline wrapper for GHCi-like REPL interfaces.
 license:             MIT
 license-file:        LICENSE
@@ -10,7 +10,7 @@ category:            User Interfaces
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
-tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3
+tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3, GHC == 7.10.1
 Bug-Reports:         https://github.com/sdiehl/repline/issues
 
 Description:
@@ -24,7 +24,7 @@ library
   exposed-modules:     System.Console.Repline
   -- other-modules:       
   build-depends:
-    base       >= 4.6 && <4.8,
+    base       >= 4.6 && <4.9,
     containers >= 0.5 && <0.6,
     mtl        >= 2.2 && <2.3,
     haskeline  >= 0.7 && <0.8
@@ -36,3 +36,8 @@ library
     MultiParamTypeClasses,
     GeneralizedNewtypeDeriving
   default-language:    Haskell2010
+
+executable Simple
+  default-language: Haskell2010
+  main-is: Simple.hs
+  build-depends: base, repline, process, mtl
