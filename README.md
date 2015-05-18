@@ -49,7 +49,8 @@ repl = evalRepl ">>> " cmd options (Word completer) ini
 Trying it out:
 
 ```haskell
-$ runhaskell Main.hs
+$ runhaskell Simple.hs
+# Or if in a sandbox: cabal exec runhaskell Simple.hs
 Welcome!
 >>> <TAB>
 kirk spock mccoy
