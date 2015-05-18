@@ -41,3 +41,8 @@ executable Simple
   default-language: Haskell2010
   main-is: Simple.hs
   build-depends: base, repline, process, mtl
+
+executable Example
+  default-language: Haskell2010
+  main-is: Example.hs
+  build-depends: base, repline, mtl, containers
