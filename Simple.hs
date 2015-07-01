@@ -3,7 +3,7 @@ module Main where
 import Control.Monad.Trans
 import System.Console.Repline
 
-import System.Cmd
+import System.Process (callCommand)
 import Data.List (isPrefixOf)
 
 type Repl a = HaskelineT IO a
@@ -24,7 +24,7 @@ help args = liftIO $ print $ "Help: " ++ show args
 
 say :: [String] -> Repl ()
 say args = do
-  _ <- liftIO $ system $ "cowsay" ++ " " ++ (unwords args)
+  _ <- liftIO $ callCommand $ "cowsay" ++ " " ++ (unwords args)
   return ()
 
 options :: [(String, [String] -> Repl ())]
@@ -37,7 +37,7 @@ ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
 repl :: IO ()
-repl = evalRepl ">>> " cmd options (Word completer) ini
+repl = evalRepl ">>> " cmd options (Word0 completer) ini
 
 main :: IO ()
 main = repl

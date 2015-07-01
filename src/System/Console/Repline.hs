@@ -243,6 +243,7 @@ evalRepl banner cmd opts comp initz = runHaskelineT _readline (initz >> monad)
 
 data CompleterStyle m
   = Word (WordCompleter m)       -- ^ Completion function takes single word.
+  | Word0 (WordCompleter m)      -- ^ Completion function takes single word ( no space ).
   | Cursor (LineCompleter m)     -- ^ Completion function takes tuple of full line.
   | File                         -- ^ Completion function completes files in CWD.
   | Prefix
@@ -251,6 +252,7 @@ data CompleterStyle m
 
 mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
 mkCompleter (Word f)          = completeWord (Just '\\') " \t()[]" (_simpleComplete f)
+mkCompleter (Word0 f)         = completeWord (Just '\\') " \t()[]" (_simpleCompleteNoSpace f)
 mkCompleter (Cursor f)        = completeWordWithPrev (Just '\\') " \t()[]" (unRev0 f)
 mkCompleter File              = completeFilename
 mkCompleter (Prefix def opts) = runMatcher opts def
@@ -264,6 +266,12 @@ trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b c
 
 _simpleComplete :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
 _simpleComplete f word = f word >>= return . map simpleCompletion
+
+_simpleCompleteNoSpace :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
+_simpleCompleteNoSpace f word = f word >>= return . map completionNoSpace
+
+completionNoSpace :: String -> Completion
+completionNoSpace str = Completion str str False
 
 wordCompleter :: Monad m => WordCompleter m -> CompletionFunc m
 wordCompleter f (start, n) = (completeWord (Just '\\') " \t()[]" (_simpleComplete f)) (start, n)
