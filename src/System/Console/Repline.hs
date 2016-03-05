@@ -122,6 +122,7 @@ module System.Console.Repline (
   runMatcher,
   evalRepl,
   abort,
+  tryAction,
 
   trimComplete,
 ) where

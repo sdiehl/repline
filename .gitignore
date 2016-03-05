@@ -5,3 +5,4 @@ cabal.sandbox.config
 .cabal-sandbox
 dist/
 .history
+.stack-work
