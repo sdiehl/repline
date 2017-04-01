@@ -20,6 +20,9 @@ Source-Repository head
     Type: git
     Location: git@github.com:sdiehl/repline.git
 
+flag examples
+  default: False
+
 library
   hs-source-dirs:      src
   exposed-modules:     System.Console.Repline
@@ -35,8 +38,12 @@ executable Simple
   default-language: Haskell2010
   main-is: Simple.hs
   build-depends: base, repline, process, mtl
+  if flag(examples)
+    buildable: False
 
 executable Example
   default-language: Haskell2010
   main-is: Example.hs
   build-depends: base, repline, mtl, containers
+  if flag(examples)
+    buildable: False
