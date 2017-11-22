@@ -1,5 +1,5 @@
 name:                repline
-version:             0.1.6.0
+version:             0.1.7.0
 synopsis:            Haskeline wrapper for GHCi-like REPL interfaces.
 license:             MIT
 license-file:        LICENSE
@@ -16,12 +16,10 @@ Bug-Reports:         https://github.com/sdiehl/repline/issues
 
 Description:
   Haskeline wrapper for GHCi-like REPL interfaces. Composable with normal mtl transformers.
+
 Source-Repository head
     Type: git
     Location: git@github.com:sdiehl/repline.git
-
-flag examples
-  default: False
 
 library
   hs-source-dirs:      src
