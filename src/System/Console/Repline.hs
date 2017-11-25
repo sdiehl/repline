@@ -205,7 +205,7 @@ replLoop banner cmdM opts = loop
 
         Just (':' : cmds) -> do
           let (cmd:args) = words cmds
-          optMatcher cmd opts args
+          H.handleInterrupt (return ()) $ optMatcher cmd opts args
           loop
 
         Just input -> do
