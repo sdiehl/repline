@@ -192,8 +192,9 @@ replLoop :: MonadException m
          => String
          -> Command (HaskelineT m)
          -> Options (HaskelineT m)
+         -> Maybe Char
          -> HaskelineT m ()
-replLoop banner cmdM opts = loop
+replLoop banner cmdM opts optsPrefix = loop
   where
     loop = do
       minput <- H.handleInterrupt (return (Just "")) $ getInputLine banner
@@ -201,12 +202,12 @@ replLoop banner cmdM opts = loop
         Nothing -> outputStrLn "Goodbye."
 
         Just "" -> loop
-        Just ":" -> loop
-
-        Just (':' : cmds) -> do
-          let (cmd:args) = words cmds
-          H.handleInterrupt (return ()) $ optMatcher cmd opts args
-          loop
+        Just (prefix: cmds)
+          | cmds == [] -> loop
+          | (Just prefix) == optsPrefix -> do
+            let (cmd: args) = words cmds
+            H.handleInterrupt (return ()) $ optMatcher cmd opts args
+            loop
 
         Just input -> do
           H.handleInterrupt (return ()) $ cmdM input
@@ -224,12 +225,13 @@ evalRepl :: MonadException m             -- Terminal monad ( often IO ).
          => String                       -- ^ Banner
          -> Command (HaskelineT m)       -- ^ Command function
          -> Options (HaskelineT m)       -- ^ Options list and commands
+         -> Maybe Char                   -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
          -> CompleterStyle m             -- ^ Tab completion function
          -> HaskelineT m a               -- ^ Initializer
          -> m ()
-evalRepl banner cmd opts comp initz = runHaskelineT _readline (initz >> monad)
+evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz >> monad)
   where
-    monad = replLoop banner cmd opts
+    monad = replLoop banner cmd opts optsPrefix
     _readline = H.Settings
       { H.complete       = mkCompleter comp
       , H.historyFile    = Just ".history"

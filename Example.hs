@@ -47,7 +47,7 @@ init1 = return ()
 -- Tab completion inside of StateT
 repl1 :: IO ()
 repl1 = flip evalStateT Set.empty
-      $ evalRepl "_proto> " cmd1 opts1 (Word completer1) init1
+      $ evalRepl "_proto> " cmd1 opts1 (Just ':') (Word completer1) init1
 
 -------------------------------------------------------------------------------
 -- Command options
@@ -76,7 +76,7 @@ init2 :: Repl2 ()
 init2 = liftIO $ putStrLn "Welcome!"
 
 repl2 :: IO ()
-repl2 = evalRepl "example2> " cmd2 opts2 (Word comp2) init2
+repl2 = evalRepl "example2> " cmd2 opts2 (Just ':') (Word comp2) init2
 
 -------------------------------------------------------------------------------
 -- Mixed Completion
@@ -119,7 +119,7 @@ init3 :: Repl3 ()
 init3 = return ()
 
 repl3 :: IO ()
-repl3 = evalRepl "example3> " cmd3 opts3 (Prefix (wordCompleter byWord) defaultMatcher) init3
+repl3 = evalRepl "example3> " cmd3 opts3 (Just ':') (Prefix (wordCompleter byWord) defaultMatcher) init3
 
 -------------------------------------------------------------------------------
 --
