@@ -204,10 +204,12 @@ replLoop banner cmdM opts optsPrefix = loop
         Just "" -> loop
         Just (prefix: cmds)
           | cmds == [] -> loop
-          | (Just prefix) == optsPrefix -> do
-            let (cmd: args) = words cmds
-            H.handleInterrupt (return ()) $ optMatcher cmd opts args
-            loop
+          | Just prefix == optsPrefix ->
+            case words cmds of
+              [] -> loop
+              (cmd:args) -> do
+                H.handleInterrupt (return ()) $ optMatcher cmd opts args
+                loop
 
         Just input -> do
           H.handleInterrupt (return ()) $ cmdM input
