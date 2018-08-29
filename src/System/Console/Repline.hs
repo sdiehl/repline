@@ -134,6 +134,7 @@ import qualified System.Console.Haskeline as H
 import Data.List (isPrefixOf)
 import Control.Applicative
 import Control.Monad.State.Strict
+import Control.Monad.Reader
 
 -------------------------------------------------------------------------------
 -- Haskeline Transformer
@@ -160,6 +161,10 @@ instance MonadException m => MonadHaskeline (H.InputT m) where
 instance MonadState s m => MonadState s (HaskelineT m) where
   get = lift get
   put = lift . put
+
+instance MonadReader r m => MonadReader r (HaskelineT m) where
+  ask                    = lift ask
+  local f (HaskelineT m) = HaskelineT $ H.mapInputT (local f) m
 
 instance (MonadHaskeline m) => MonadHaskeline (StateT s m) where
   getInputLine = lift . getInputLine
