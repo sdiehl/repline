@@ -205,21 +205,22 @@ replLoop banner cmdM opts optsPrefix = loop
       minput <- H.handleInterrupt (pure (Just "")) $ getInputLine banner
       case minput of
         Nothing -> outputStrLn "Goodbye."
-
         Just "" -> loop
         Just (prefix: cmds)
-          | null cmds -> loop
+          | null cmds -> handleInput [prefix] *> loop
           | Just prefix == optsPrefix ->
             case words cmds of
               [] -> loop
               (cmd:args) -> do
                 let optAction = optMatcher cmd opts args
                 result <- H.handleInterrupt (pure Nothing) $ Just <$> optAction
-                maybe (pure ()) (const loop) result
-
+                maybe exit (const loop) result
         Just input -> do
-          H.handleInterrupt (pure ()) $ cmdM input
+          handleInput input
           loop
+
+    handleInput input = H.handleInterrupt exit $ cmdM input
+    exit = pure ()
 
 -- | Match the options.
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
