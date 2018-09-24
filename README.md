@@ -43,7 +43,7 @@ ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
 repl :: IO ()
-repl = evalRepl ">>> " cmd options (Word completer) ini
+repl = evalRepl (pure ">>> ") cmd options (Word completer) ini
 ```
 
 Trying it out:
@@ -62,9 +62,9 @@ kirk
 "spam"
 
 >>> :say Hello Haskell
- _______________ 
+ _______________
 < Hello Haskell >
- --------------- 
+ ---------------
         \   ^__^
          \  (oo)\_______
             (__)\       )\/\
@@ -113,12 +113,12 @@ ini = return ()
 -- Tab completion inside of StateT
 repl :: IO ()
 repl = flip evalStateT Set.empty
-     $ evalRepl ">>> " cmd opts (Word comp) init
+     $ evalRepl (pure ">>> ") cmd opts (Word comp) init
 ```
 
 
 Prefix Completion
-----------------
+-----------------
 
 Just as GHCi will provide different tab completion for kind-level vs type-level symbols based on which prefix
 the user has entered, we can also set up a provide this as a first-level construct using a ``Prefix`` tab
@@ -164,7 +164,7 @@ init :: Repl ()
 init = return ()
 
 repl :: IO ()
-repl = evalRepl ">> " cmd opts (Prefix (wordCompleter byWord) defaultMatcher) init
+repl = evalRepl (pure ">>> ") cmd opts (Prefix (wordCompleter byWord) defaultMatcher) init
 ```
 
 Trying it out:
