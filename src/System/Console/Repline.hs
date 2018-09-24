@@ -41,7 +41,7 @@ access a StateT instance to query application state.
 > completer :: Monad m => WordCompleter m
 > completer n = do
 >   let names = ["kirk", "spock", "mccoy"]
->   return $ filter (isPrefixOf n) names
+>   pure $ filter (isPrefixOf n) names
 
 Input which is prefixed by a colon (commands like \":type\" and \":help\") queries an association list of
 functions which map to custom logic. The function takes a space-separated list of augments in it's first
@@ -54,7 +54,7 @@ argument. If the entire line is desired then the 'unwords' function can be used 
 > say :: [String] -> Repl ()
 > say args = do
 >   _ <- liftIO $ system $ "cowsay" ++ " " ++ (unwords args)
->   return ()
+>   pure ()
 
 Now we need only map these functions to their commands.
 
@@ -202,22 +202,23 @@ replLoop :: MonadException m
 replLoop banner cmdM opts optsPrefix = loop
   where
     loop = do
-      minput <- H.handleInterrupt (return (Just "")) $ getInputLine banner
+      minput <- H.handleInterrupt (pure (Just "")) $ getInputLine banner
       case minput of
         Nothing -> outputStrLn "Goodbye."
 
         Just "" -> loop
         Just (prefix: cmds)
-          | cmds == [] -> loop
+          | null cmds -> loop
           | Just prefix == optsPrefix ->
             case words cmds of
               [] -> loop
               (cmd:args) -> do
-                H.handleInterrupt (return ()) $ optMatcher cmd opts args
-                loop
+                let optAction = optMatcher cmd opts args
+                result <- H.handleInterrupt (pure Nothing) $ Just <$> optAction
+                maybe (pure ()) (const loop) result
 
         Just input -> do
-          H.handleInterrupt (return ()) $ cmdM input
+          H.handleInterrupt (pure ()) $ cmdM input
           loop
 
 -- | Match the options.
@@ -275,16 +276,16 @@ trimComplete :: String -> Completion -> Completion
 trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b c
 
 _simpleComplete :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
-_simpleComplete f word = f word >>= return . map simpleCompletion
+_simpleComplete f word = map simpleCompletion <$> f word
 
 _simpleCompleteNoSpace :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
-_simpleCompleteNoSpace f word = f word >>= return . map completionNoSpace
+_simpleCompleteNoSpace f word = map completionNoSpace <$> f word
 
 completionNoSpace :: String -> Completion
 completionNoSpace str = Completion str str False
 
 wordCompleter :: Monad m => WordCompleter m -> CompletionFunc m
-wordCompleter f (start, n) = (completeWord (Just '\\') " \t()[]" (_simpleComplete f)) (start, n)
+wordCompleter f (start, n) = completeWord (Just '\\') " \t()[]" (_simpleComplete f) (start, n)
 
 listCompleter :: Monad m => [String] -> CompletionFunc m
 listCompleter names (start, n) = completeWord (Just '\\') " \t()[]" (_simpleComplete (complete_aux names)) (start, n)
@@ -296,7 +297,7 @@ fileCompleter :: MonadIO m => CompletionFunc m
 fileCompleter = completeFilename
 
 complete_aux :: Monad m => [String] -> WordCompleter m
-complete_aux names n = return $ filter (isPrefixOf n) names
+complete_aux names n = pure $ filter (isPrefixOf n) names
 
 completeMatcher :: (Monad m) => CompletionFunc m -> String
                              -> [(String, CompletionFunc m)]
@@ -310,5 +311,5 @@ completeMatcher def s ((x, f):xs) args
 runMatcher :: Monad m => [(String, CompletionFunc m)]
                       -> CompletionFunc m
                       -> CompletionFunc m
-runMatcher opts def (start, n) = do
-  (completeMatcher def (n ++ reverse start) opts) (start, n)
+runMatcher opts def (start, n) =
+  completeMatcher def (n ++ reverse start) opts (start, n)
