@@ -41,7 +41,7 @@ access a StateT instance to query application state.
 > completer :: Monad m => WordCompleter m
 > completer n = do
 >   let names = ["kirk", "spock", "mccoy"]
->   pure $ filter (isPrefixOf n) names
+>   return $ filter (isPrefixOf n) names
 
 Input which is prefixed by a colon (commands like \":type\" and \":help\") queries an association list of
 functions which map to custom logic. The function takes a space-separated list of augments in it's first
@@ -54,7 +54,7 @@ argument. If the entire line is desired then the 'unwords' function can be used 
 > say :: [String] -> Repl ()
 > say args = do
 >   _ <- liftIO $ system $ "cowsay" ++ " " ++ (unwords args)
->   pure ()
+>   return ()
 
 Now we need only map these functions to their commands.
 
@@ -193,7 +193,7 @@ abort :: MonadIO m => HaskelineT m a
 abort = throwIO H.Interrupt
 
 -- | Completion loop.
-replLoop :: MonadException m
+replLoop :: (Functor m, MonadException m)
          => String
          -> Command (HaskelineT m)
          -> Options (HaskelineT m)
@@ -202,25 +202,25 @@ replLoop :: MonadException m
 replLoop banner cmdM opts optsPrefix = loop
   where
     loop = do
-      minput <- H.handleInterrupt (pure (Just "")) $ getInputLine banner
+      minput <- H.handleInterrupt (return (Just "")) $ getInputLine banner
       case minput of
         Nothing -> outputStrLn "Goodbye."
         Just "" -> loop
         Just (prefix: cmds)
-          | null cmds -> handleInput [prefix] *> loop
+          | null cmds -> handleInput [prefix] >> loop
           | Just prefix == optsPrefix ->
             case words cmds of
               [] -> loop
               (cmd:args) -> do
                 let optAction = optMatcher cmd opts args
-                result <- H.handleInterrupt (pure Nothing) $ Just <$> optAction
+                result <- H.handleInterrupt (return Nothing) $ Just <$> optAction
                 maybe exit (const loop) result
         Just input -> do
           handleInput input
           loop
 
     handleInput input = H.handleInterrupt exit $ cmdM input
-    exit = pure ()
+    exit = return ()
 
 -- | Match the options.
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
@@ -230,13 +230,13 @@ optMatcher s ((x, m):xs) args
   | otherwise = optMatcher s xs args
 
 -- | Evaluate the REPL logic into a MonadException context.
-evalRepl :: MonadException m             -- Terminal monad ( often IO ).
-         => String                       -- ^ Banner
-         -> Command (HaskelineT m)       -- ^ Command function
-         -> Options (HaskelineT m)       -- ^ Options list and commands
-         -> Maybe Char                   -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
-         -> CompleterStyle m             -- ^ Tab completion function
-         -> HaskelineT m a               -- ^ Initializer
+evalRepl :: (Functor m, MonadException m)  -- Terminal monad ( often IO ).
+         => String                         -- ^ Banner
+         -> Command (HaskelineT m)         -- ^ Command function
+         -> Options (HaskelineT m)         -- ^ Options list and commands
+         -> Maybe Char                     -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
+         -> CompleterStyle m               -- ^ Tab completion function
+         -> HaskelineT m a                 -- ^ Initializer
          -> m ()
 evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz >> monad)
   where
@@ -277,10 +277,10 @@ trimComplete :: String -> Completion -> Completion
 trimComplete prefix (Completion a b c) = Completion (drop (length prefix) a) b c
 
 _simpleComplete :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
-_simpleComplete f word = map simpleCompletion <$> f word
+_simpleComplete f word = f word >>= return . map simpleCompletion
 
 _simpleCompleteNoSpace :: (Monad m) => (String -> m [String]) -> String -> m [Completion]
-_simpleCompleteNoSpace f word = map completionNoSpace <$> f word
+_simpleCompleteNoSpace f word = f word >>= return . map completionNoSpace
 
 completionNoSpace :: String -> Completion
 completionNoSpace str = Completion str str False
@@ -298,7 +298,7 @@ fileCompleter :: MonadIO m => CompletionFunc m
 fileCompleter = completeFilename
 
 complete_aux :: Monad m => [String] -> WordCompleter m
-complete_aux names n = pure $ filter (isPrefixOf n) names
+complete_aux names n = return $ filter (isPrefixOf n) names
 
 completeMatcher :: (Monad m) => CompletionFunc m -> String
                              -> [(String, CompletionFunc m)]
