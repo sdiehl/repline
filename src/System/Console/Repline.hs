@@ -123,6 +123,7 @@ module System.Console.Repline (
   evalRepl,
   abort,
   tryAction,
+  dontCrash,
 
   trimComplete,
 ) where
@@ -135,6 +136,7 @@ import Data.List (isPrefixOf)
 import Control.Applicative
 import Control.Monad.State.Strict
 import Control.Monad.Reader
+import Control.Exception (displayException)
 
 -------------------------------------------------------------------------------
 -- Haskeline Transformer
@@ -187,6 +189,10 @@ type LineCompleter m = (String -> String -> m [Completion])
 tryAction :: MonadException m => HaskelineT m a -> HaskelineT m a
 tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
     where loop = handle (\H.Interrupt -> loop) f
+
+-- | Catch all toplevel failures.
+dontCrash :: (MonadIO m, H.MonadException m) => m () -> m ()
+dontCrash m = H.catch m ( \ e@SomeException{} -> liftIO ( putStrLn ( displayException e ) ) )
 
 -- | Abort the current REPL loop, and continue.
 abort :: MonadIO m => HaskelineT m a
