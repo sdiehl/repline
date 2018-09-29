@@ -136,7 +136,6 @@ import Data.List (isPrefixOf)
 import Control.Applicative
 import Control.Monad.State.Strict
 import Control.Monad.Reader
-import Control.Exception (displayException)
 
 -------------------------------------------------------------------------------
 -- Haskeline Transformer
@@ -192,7 +191,7 @@ tryAction (HaskelineT f) = HaskelineT (H.withInterrupt loop)
 
 -- | Catch all toplevel failures.
 dontCrash :: (MonadIO m, H.MonadException m) => m () -> m ()
-dontCrash m = H.catch m ( \ e@SomeException{} -> liftIO ( putStrLn ( displayException e ) ) )
+dontCrash m = H.catch m ( \ e@SomeException{} -> liftIO ( putStrLn ( show e ) ) )
 
 -- | Abort the current REPL loop, and continue.
 abort :: MonadIO m => HaskelineT m a
