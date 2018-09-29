@@ -199,7 +199,7 @@ abort :: MonadIO m => HaskelineT m a
 abort = throwIO H.Interrupt
 
 -- | Completion loop.
-replLoop :: MonadException m
+replLoop :: (Functor m, MonadException m)
          => HaskelineT m String
          -> Command (HaskelineT m)
          -> Options (HaskelineT m)
@@ -212,20 +212,22 @@ replLoop banner cmdM opts optsPrefix = loop
       minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
       case minput of
         Nothing -> outputStrLn "Goodbye."
-
         Just "" -> loop
         Just (prefix: cmds)
-          | cmds == [] -> loop
+          | null cmds -> handleInput [prefix] >> loop
           | Just prefix == optsPrefix ->
             case words cmds of
               [] -> loop
               (cmd:args) -> do
-                H.handleInterrupt (return ()) $ optMatcher cmd opts args
-                loop
-
+                let optAction = optMatcher cmd opts args
+                result <- H.handleInterrupt (return Nothing) $ Just <$> optAction
+                maybe exit (const loop) result
         Just input -> do
-          H.handleInterrupt (return ()) $ cmdM input
+          handleInput input
           loop
+
+    handleInput input = H.handleInterrupt exit $ cmdM input
+    exit = return ()
 
 -- | Match the options.
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
@@ -235,13 +237,13 @@ optMatcher s ((x, m):xs) args
   | otherwise = optMatcher s xs args
 
 -- | Evaluate the REPL logic into a MonadException context.
-evalRepl :: MonadException m             -- Terminal monad ( often IO ).
-         => HaskelineT m String          -- ^ Banner
-         -> Command (HaskelineT m)       -- ^ Command function
-         -> Options (HaskelineT m)       -- ^ Options list and commands
-         -> Maybe Char                   -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
-         -> CompleterStyle m             -- ^ Tab completion function
-         -> HaskelineT m a               -- ^ Initializer
+evalRepl :: (Functor m, MonadException m)  -- Terminal monad ( often IO ).
+         => HaskelineT m String            -- ^ Banner
+         -> Command (HaskelineT m)         -- ^ Command function
+         -> Options (HaskelineT m)         -- ^ Options list and commands
+         -> Maybe Char                     -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
+         -> CompleterStyle m               -- ^ Tab completion function
+         -> HaskelineT m a                 -- ^ Initializer
          -> m ()
 evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz >> monad)
   where
@@ -291,7 +293,7 @@ completionNoSpace :: String -> Completion
 completionNoSpace str = Completion str str False
 
 wordCompleter :: Monad m => WordCompleter m -> CompletionFunc m
-wordCompleter f (start, n) = (completeWord (Just '\\') " \t()[]" (_simpleComplete f)) (start, n)
+wordCompleter f (start, n) = completeWord (Just '\\') " \t()[]" (_simpleComplete f) (start, n)
 
 listCompleter :: Monad m => [String] -> CompletionFunc m
 listCompleter names (start, n) = completeWord (Just '\\') " \t()[]" (_simpleComplete (complete_aux names)) (start, n)
@@ -317,5 +319,5 @@ completeMatcher def s ((x, f):xs) args
 runMatcher :: Monad m => [(String, CompletionFunc m)]
                       -> CompletionFunc m
                       -> CompletionFunc m
-runMatcher opts def (start, n) = do
-  (completeMatcher def (n ++ reverse start) opts) (start, n)
+runMatcher opts def (start, n) =
+  completeMatcher def (n ++ reverse start) opts (start, n)
