@@ -37,7 +37,7 @@ ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
 repl :: IO ()
-repl = evalRepl ">>> " cmd options (Just ':') (Word0 completer) ini
+repl = evalRepl (pure ">>> ") cmd options (Just ':') (Word0 completer) ini
 
 main :: IO ()
 main = repl

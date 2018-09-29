@@ -72,7 +72,7 @@ The banner function is simply an IO action that is called at the start of the sh
 Putting it all together we have a little shell.
 
 > main :: IO ()
-> main = evalRepl ">>> " cmd options (Word completer) ini
+> main = evalRepl (pure ">>> ") cmd options (Word completer) ini
 
 Putting this in a file we can test out our cow-trek shell.
 
@@ -194,7 +194,7 @@ abort = throwIO H.Interrupt
 
 -- | Completion loop.
 replLoop :: (Functor m, MonadException m)
-         => String
+         => HaskelineT m String
          -> Command (HaskelineT m)
          -> Options (HaskelineT m)
          -> Maybe Char
@@ -202,7 +202,8 @@ replLoop :: (Functor m, MonadException m)
 replLoop banner cmdM opts optsPrefix = loop
   where
     loop = do
-      minput <- H.handleInterrupt (return (Just "")) $ getInputLine banner
+      prefix <- banner
+      minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
       case minput of
         Nothing -> outputStrLn "Goodbye."
         Just "" -> loop
@@ -231,7 +232,7 @@ optMatcher s ((x, m):xs) args
 
 -- | Evaluate the REPL logic into a MonadException context.
 evalRepl :: (Functor m, MonadException m)  -- Terminal monad ( often IO ).
-         => String                         -- ^ Banner
+         => HaskelineT m String            -- ^ Banner
          -> Command (HaskelineT m)         -- ^ Command function
          -> Options (HaskelineT m)         -- ^ Options list and commands
          -> Maybe Char                     -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
