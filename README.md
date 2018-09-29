@@ -190,5 +190,5 @@ $ cabal install repline
 License
 -------
 
-Copyright (c) 2014-2017, Stephen Diehl
+Copyright (c) 2014-2018, Stephen Diehl
 Released under the MIT License
