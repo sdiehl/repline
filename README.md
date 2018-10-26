@@ -43,7 +43,7 @@ ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd options (Word completer) ini
+repl = evalRepl (pure ">>> ") cmd options Nothing (Word completer) ini
 ```
 
 Trying it out:
@@ -113,7 +113,7 @@ ini = return ()
 -- Tab completion inside of StateT
 repl :: IO ()
 repl = flip evalStateT Set.empty
-     $ evalRepl (pure ">>> ") cmd opts (Word comp) init
+     $ evalRepl (pure ">>> ") cmd opts Nothing (Word comp) init
 ```
 
 
@@ -164,7 +164,7 @@ init :: Repl ()
 init = return ()
 
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd opts (Prefix (wordCompleter byWord) defaultMatcher) init
+repl = evalRepl (pure ">>> ") cmd opts Nothing (Prefix (wordCompleter byWord) defaultMatcher) init
 ```
 
 Trying it out:
@@ -178,13 +178,6 @@ sample1.txt sample2.txt
 
 >>> :holiday <TAB>
 christmas thanksgiving festivus
-```
-
-Installation
-------------
-
-```bash
-$ cabal install repline
 ```
 
 License
