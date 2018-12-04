@@ -183,5 +183,5 @@ christmas thanksgiving festivus
 License
 -------
 
-Copyright (c) 2014-2018, Stephen Diehl
+Copyright (c) 2014-2019, Stephen Diehl
 Released under the MIT License
