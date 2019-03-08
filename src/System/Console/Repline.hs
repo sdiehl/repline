@@ -21,7 +21,9 @@ custom functions and evaluating it inside of IO:
 
   * Completions: Handled when tab key is pressed.
 
-  * Options: Handled when a command prefixed by a colon is entered.
+  * Options: Handled when a command prefixed by a prefix character is entered.
+
+  * Command prefix character: Optional command prefix ( passing Nothing ignores the Options argument ).
 
   * Banner: Text Displayed at initialization.
 
@@ -72,7 +74,7 @@ The banner function is simply an IO action that is called at the start of the sh
 Putting it all together we have a little shell.
 
 > main :: IO ()
-> main = evalRepl (pure ">>> ") cmd options (Word completer) ini
+> main = evalRepl (pure ">>> ") cmd options (Just ':') (Word completer) ini
 
 Putting this in a file we can test out our cow-trek shell.
 
