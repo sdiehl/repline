@@ -136,6 +136,7 @@ import qualified System.Console.Haskeline as H
 
 import Data.List (isPrefixOf)
 import Control.Applicative
+import Control.Monad.Fail as Fail
 import Control.Monad.State.Strict
 import Control.Monad.Reader
 
@@ -160,6 +161,9 @@ instance MonadException m => MonadHaskeline (H.InputT m) where
   getInputChar = H.getInputChar
   outputStr    = H.outputStr
   outputStrLn  = H.outputStrLn
+
+instance Fail.MonadFail m => Fail.MonadFail (HaskelineT m) where
+  fail = lift . Fail.fail
 
 instance MonadState s m => MonadState s (HaskelineT m) where
   get = lift get

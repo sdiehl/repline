@@ -1,6 +1,8 @@
 HEAD
 ====
 
+- Add a `MonadFail` instance to `HaskelineT`.
+
 0.2.0.0
 =======
 
