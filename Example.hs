@@ -1,21 +1,20 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Main where
 
-import System.Console.Repline
-
-import qualified Data.Set as Set
 import Control.Monad.State.Strict
-
 import Data.List (isPrefixOf)
+import qualified Data.Set as Set
+import System.Console.Repline
 
 -------------------------------------------------------------------------------
 -- Stateful Completion
 -------------------------------------------------------------------------------
 
 type IState = Set.Set String
+
 type Repl1 a = HaskelineT (StateT IState IO) a
 
 -- Evaluation
@@ -36,9 +35,9 @@ puts1 :: [String] -> Repl1 ()
 puts1 args = modify $ Set.union (Set.fromList args)
 
 opts1 :: [(String, [String] -> Repl1 ())]
-opts1 = [
-    ("help", help1) -- :help
-  , ("puts", puts1) -- :puts
+opts1 =
+  [ ("help", help1), -- :help
+    ("puts", puts1) -- :puts
   ]
 
 init1 :: Repl1 ()
@@ -46,8 +45,9 @@ init1 = return ()
 
 -- Tab completion inside of StateT
 repl1 :: IO ()
-repl1 = flip evalStateT Set.empty
-      $ evalRepl (pure "_proto> ") cmd1 opts1 (Just ':') (Word completer1) init1
+repl1 =
+  flip evalStateT Set.empty $
+    evalRepl (pure "_proto> ") cmd1 opts1 (Just ':') (Word completer1) init1
 
 -------------------------------------------------------------------------------
 -- Command options
@@ -68,8 +68,8 @@ help2 :: [String] -> Repl2 ()
 help2 args = liftIO $ print $ "Help!" ++ show args
 
 opts2 :: [(String, [String] -> Repl2 ())]
-opts2 = [
-    ("help", help2)
+opts2 =
+  [ ("help", help2)
   ]
 
 init2 :: Repl2 ()
@@ -89,9 +89,9 @@ cmd3 :: String -> Repl3 ()
 cmd3 input = liftIO $ print input
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
-defaultMatcher = [
-    (":file"    , fileCompleter)
-  , (":holiday" , listCompleter ["christmas", "thanksgiving", "festivus"])
+defaultMatcher =
+  [ (":file", fileCompleter),
+    (":holiday", listCompleter ["christmas", "thanksgiving", "festivus"])
   ]
 
 byWord :: Monad m => WordCompleter m
@@ -110,9 +110,9 @@ holidays xs = liftIO $ do
   putStrLn $ "Happy " ++ unwords xs ++ "!"
 
 opts3 :: [(String, [String] -> Repl3 ())]
-opts3 = [
-    ("file", files)
-  , ("holiday", holidays)
+opts3 =
+  [ ("file", files),
+    ("holiday", holidays)
   ]
 
 init3 :: Repl3 ()

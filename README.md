@@ -8,6 +8,13 @@ Slightly higher level wrapper for creating GHCi-like REPL monads that are compos
 transformers. Mostly exists because I got tired of implementing the same interface for simple shells over and
 over and decided to canonize the giant pile of hacks that I use to make Haskeline work.
 
+Examples
+--------
+
+* [Simple](examples/Simple.hs)
+* [Prefix](examples/Prefix.hs)
+* [Stateful](examples/Stateful.hs)
+
 Usage
 -----
 
@@ -49,8 +56,9 @@ repl = evalRepl (pure ">>> ") cmd options Nothing (Word completer) ini
 Trying it out:
 
 ```haskell
-$ runhaskell Simple.hs
-# Or if in a sandbox: cabal exec runhaskell Simple.hs
+$ stack repl Simple.hs
+Prelude> main
+
 Welcome!
 >>> <TAB>
 kirk spock mccoy
@@ -113,7 +121,7 @@ ini = return ()
 -- Tab completion inside of StateT
 repl :: IO ()
 repl = flip evalStateT Set.empty
-     $ evalRepl (pure ">>> ") cmd opts Nothing (Word comp) init
+     $ evalRepl (pure ">>> ") cmd opts Nothing (Word comp) ini
 ```
 
 
@@ -170,7 +178,9 @@ repl = evalRepl (pure ">>> ") cmd opts Nothing (Prefix (wordCompleter byWord) de
 Trying it out:
 
 ```haskell
-$ runhaskell Main.hs
+$ stack repl examples/Prefix.hs
+Prelude> main
+
 >>> :file <TAB>
 sample1.txt sample2.txt
 
@@ -183,5 +193,5 @@ christmas thanksgiving festivus
 License
 -------
 
-Copyright (c) 2014-2019, Stephen Diehl
+Copyright (c) 2014-2020, Stephen Diehl
 Released under the MIT License

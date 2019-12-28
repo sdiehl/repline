@@ -1,10 +1,9 @@
 module Main where
 
 import Control.Monad.Trans
-import System.Console.Repline
-
-import System.Process (callCommand)
 import Data.List (isPrefixOf)
+import System.Console.Repline
+import System.Process (callCommand)
 
 type Repl a = HaskelineT IO a
 
@@ -28,9 +27,9 @@ say args = do
   return ()
 
 options :: [(String, [String] -> Repl ())]
-options = [
-    ("help", help)  -- :help
-  , ("say", say)    -- :say
+options =
+  [ ("help", help), -- :help
+    ("say", say) -- :say
   ]
 
 ini :: Repl ()
