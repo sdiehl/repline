@@ -4,6 +4,7 @@ HEAD
 0.2.2.0
 =======
 
+- `ReplOpts` configuration type and `evalReplOpts` function.
 - Only use `fail` for GHC<8.0
 
 0.2.1.0

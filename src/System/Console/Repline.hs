@@ -1,4 +1,5 @@
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -110,6 +111,8 @@ module System.Console.Repline (
 
   -- * Toplevel
   evalRepl,
+  ReplOpts(..),
+  evalReplOpts,
 
   -- * Repline Types
   Cmd,
@@ -255,6 +258,31 @@ optMatcher s ((x, m):xs) args
   | s `isPrefixOf` x = m args
   | otherwise = optMatcher s xs args
 
+-------------------------------------------------------------------------------
+-- Toplevel
+-------------------------------------------------------------------------------
+
+-- | REPL Options datatype
+data ReplOpts m = ReplOpts {
+    banner      :: HaskelineT m String    -- ^ Banner
+  , command     :: Command (HaskelineT m) -- ^ Command function
+  , options     :: Options (HaskelineT m) -- ^ Options list and commands
+  , prefix      :: Maybe Char             -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
+  , tabComplete :: CompleterStyle m       -- ^ Tab completion function
+  , initialiser :: HaskelineT m ()        -- ^ Initialiser
+  }
+
+-- | Evaluate the REPL logic into a MonadException context from the ReplOpts
+-- configuration.
+evalReplOpts :: (Functor m, MonadException m) => ReplOpts m -> m ()
+evalReplOpts (ReplOpts {..}) = evalRepl
+  banner
+  command
+  options
+  prefix
+  tabComplete
+  initialiser
+
 -- | Evaluate the REPL logic into a MonadException context.
 evalRepl :: (Functor m, MonadException m)  -- Terminal monad ( often IO ).
          => HaskelineT m String            -- ^ Banner
@@ -262,7 +290,7 @@ evalRepl :: (Functor m, MonadException m)  -- Terminal monad ( often IO ).
          -> Options (HaskelineT m)         -- ^ Options list and commands
          -> Maybe Char                     -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
          -> CompleterStyle m               -- ^ Tab completion function
-         -> HaskelineT m a                 -- ^ Initializer
+         -> HaskelineT m a                 -- ^ Initialiser
          -> m ()
 evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz >> monad)
   where
