@@ -251,7 +251,7 @@ replLoop banner cmdM opts optsPrefix = loop
 
 -- | Match the options.
 optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
-optMatcher s [] _ = outputStrLn $ "No such command :" <> s
+optMatcher s [] _ = outputStrLn $ "No such command :" ++ s
 optMatcher s ((x, m):xs) args
   | s `isPrefixOf` x = m args
   | otherwise = optMatcher s xs args
