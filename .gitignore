@@ -6,3 +6,4 @@ cabal.sandbox.config
 dist/
 .history
 .stack-work
+dist-newstyle

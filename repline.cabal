@@ -39,3 +39,31 @@ library
   if !impl(ghc >= 8.0)
     Build-Depends: fail >= 4.9 && <4.10
   default-language:    Haskell2010
+
+test-suite prefix
+    type:       exitcode-stdio-1.0
+    main-is:    examples/Prefix.hs
+    build-depends: 
+      base,
+      mtl,
+      containers,
+      repline
+
+test-suite simple
+    type:       exitcode-stdio-1.0
+    main-is:    examples/Simple.hs
+    build-depends: 
+      base,
+      mtl,
+      containers,
+      process,
+      repline
+
+test-suite stateful
+    type:       exitcode-stdio-1.0
+    main-is:    examples/Stateful.hs
+    build-depends: 
+      base,
+      mtl,
+      containers,
+      repline
