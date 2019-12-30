@@ -1,6 +1,13 @@
 HEAD
 ====
 
+0.3.0.0
+=======
+
+- Upgrades to lower bound to Haskeline 0.8.0.0.
+- No longer requires MonadException.
+- MonadCatch, MonadThrow, MonadMask instances.
+
 0.2.2.0
 =======
 
