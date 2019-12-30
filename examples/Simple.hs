@@ -1,4 +1,4 @@
-module Main where
+module Main (main, repl) where
 
 import Control.Monad.Trans
 import Data.List (isPrefixOf)
@@ -39,4 +39,4 @@ repl :: IO ()
 repl = evalRepl (pure ">>> ") cmd opts (Just ':') (Word0 completer) ini
 
 main :: IO ()
-main = repl
+main = pure ()

@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Main where
+module Main (main, repl) where
 
 import Control.Monad.State.Strict
 import Data.List (isPrefixOf)
@@ -50,4 +50,4 @@ repl =
     evalRepl (pure ">>> ") cmd opts Nothing (Word comp) ini
 
 main :: IO ()
-main = repl
+main = pure ()

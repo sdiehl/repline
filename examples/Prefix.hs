@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Main where
+module Main (main, repl) where
 
 import Control.Monad.State.Strict
 import Data.List (isPrefixOf)
@@ -55,4 +55,4 @@ repl :: IO ()
 repl = evalRepl (pure ">>> ") cmd opts Nothing (Prefix (wordCompleter byWord) defaultMatcher) inits
 
 main :: IO ()
-main = repl
+main = pure ()
