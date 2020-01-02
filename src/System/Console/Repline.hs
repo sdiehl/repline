@@ -123,6 +123,7 @@ module System.Console.Repline (
 
   -- * Completers
   CompletionFunc, -- re-export
+  fallbackCompletion,
 
   wordCompleter,
   listCompleter,
@@ -150,8 +151,19 @@ import Control.Monad.Catch
 -- Haskeline Transformer
 -------------------------------------------------------------------------------
 
-newtype HaskelineT (m :: * -> *) a = HaskelineT { unHaskeline :: H.InputT m a }
- deriving (Monad, Functor, Applicative, MonadIO, MonadTrans, MonadHaskeline, MonadThrow, MonadCatch, MonadMask)
+newtype HaskelineT (m :: * -> *) a = HaskelineT {unHaskeline :: H.InputT m a}
+  deriving
+    ( Monad,
+      Functor,
+      Applicative,
+      MonadIO,
+      MonadFix,
+      MonadTrans,
+      MonadHaskeline,
+      MonadThrow,
+      MonadCatch,
+      MonadMask
+    )
 
 -- | Run HaskelineT monad
 runHaskelineT :: (MonadMask m, MonadIO m) => H.Settings m -> HaskelineT m a -> m a
@@ -317,6 +329,10 @@ data CompleterStyle m
     Prefix
       (CompletionFunc m)
       [(String, CompletionFunc m)]
+  -- | Combine two completions
+  | Combine (CompleterStyle m) (CompleterStyle m)
+  -- | Custom completion
+  | Custom (CompletionFunc m)
 
 -- | Make a completer function from a completion type
 mkCompleter :: MonadIO m => CompleterStyle m -> CompletionFunc m
@@ -325,6 +341,8 @@ mkCompleter (Word0 f) = completeWord (Just '\\') " \t()[]" (_simpleCompleteNoSpa
 mkCompleter (Cursor f) = completeWordWithPrev (Just '\\') " \t()[]" (unRev0 f)
 mkCompleter File = completeFilename
 mkCompleter (Prefix def opts) = runMatcher opts def
+mkCompleter (Combine a b) = fallbackCompletion (mkCompleter a) (mkCompleter b)
+mkCompleter (Custom f) = f
 
 -- haskeline takes the first argument as the reversed string, don't know why
 unRev0 :: LineCompleter m -> LineCompleter m
