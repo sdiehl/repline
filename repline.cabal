@@ -1,5 +1,5 @@
 name:                repline
-version:             0.2.2.0
+version:             0.3.0.0
 synopsis:            Haskeline wrapper for GHCi-like REPL interfaces.
 license:             MIT
 license-file:        LICENSE
@@ -28,13 +28,42 @@ Source-Repository head
 library
   hs-source-dirs:      src
   exposed-modules:     System.Console.Repline
+  ghc-options:         -Wall
   build-depends:
-    base       >= 4.6 && <5.0,
-    containers >= 0.5 && <0.7,
-    exceptions >= 0.10 && < 0.11,
-    mtl        >= 2.2 && <2.3,
-    process    >= 1.2 && <2.0,
-    haskeline  >= 0.7 && <0.9
+    base       >= 4.6  && <5.0,
+    haskeline  >= 0.8  && <0.9,
+    containers >= 0.5  && <0.7,
+    exceptions >= 0.10 && <0.11,
+    mtl        >= 2.2  && <2.3,
+    process    >= 1.2  && <2.0
   if !impl(ghc >= 8.0)
     Build-Depends: fail >= 4.9 && <4.10
   default-language:    Haskell2010
+
+test-suite prefix
+    type:       exitcode-stdio-1.0
+    main-is:    examples/Prefix.hs
+    build-depends: 
+      base,
+      mtl,
+      containers,
+      repline
+
+test-suite simple
+    type:       exitcode-stdio-1.0
+    main-is:    examples/Simple.hs
+    build-depends: 
+      base,
+      mtl,
+      containers,
+      process,
+      repline
+
+test-suite stateful
+    type:       exitcode-stdio-1.0
+    main-is:    examples/Stateful.hs
+    build-depends: 
+      base,
+      mtl,
+      containers,
+      repline

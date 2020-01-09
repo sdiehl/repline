@@ -1,4 +1,4 @@
-module Main where
+module Main (main, repl) where
 
 import Control.Monad.Trans
 import Data.List (isPrefixOf)
@@ -26,8 +26,8 @@ say args = do
   _ <- liftIO $ callCommand $ "cowsay" ++ " " ++ (unwords args)
   return ()
 
-options :: [(String, [String] -> Repl ())]
-options =
+opts :: [(String, [String] -> Repl ())]
+opts =
   [ ("help", help), -- :help
     ("say", say) -- :say
   ]
@@ -36,7 +36,7 @@ ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd options (Just ':') (Word0 completer) ini
+repl = evalRepl (pure ">>> ") cmd opts (Just ':') (Word0 completer) ini
 
 main :: IO ()
-main = repl
+main = pure ()
