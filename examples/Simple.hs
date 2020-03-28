@@ -35,6 +35,16 @@ opts =
 ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
+repl_alt :: IO ()
+repl_alt = evalReplOpts $ ReplOpts
+  { banner      = pure ">>> "
+  , command     = cmd
+  , options     = opts
+  , prefix      = Just ':'
+  , tabComplete = (Word0 completer)
+  , initialiser = ini
+  }
+
 repl :: IO ()
 repl = evalRepl (pure ">>> ") cmd opts (Just ':') (Word0 completer) ini
 
