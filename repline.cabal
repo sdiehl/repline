@@ -1,35 +1,35 @@
-name:                repline
-version:             0.3.0.0
-synopsis:            Haskeline wrapper for GHCi-like REPL interfaces.
-license:             MIT
-license-file:        LICENSE
-author:              Stephen Diehl
-maintainer:          stephen.m.diehl@gmail.com
-copyright:           2014-2020 Stephen Diehl
-category:            User Interfaces
-build-type:          Simple
-extra-source-files:  README.md
-cabal-version:       >=1.10
+name:               repline
+version:            0.3.0.0
+synopsis:           Haskeline wrapper for GHCi-like REPL interfaces.
+license:            MIT
+license-file:       LICENSE
+author:             Stephen Diehl
+maintainer:         stephen.m.diehl@gmail.com
+copyright:          2014-2020 Stephen Diehl
+category:           User Interfaces
+build-type:         Simple
+extra-source-files: README.md
+cabal-version:      >=1.10
 tested-with:
-  GHC == 7.6.1,
-  GHC == 7.6.2,
-  GHC == 7.6.3,
-  GHC == 7.8.1,
-  GHC == 7.8.2,
-  GHC == 7.8.3,
-  GHC == 7.8.4,
-  GHC == 7.10.1,
-  GHC == 7.10.2,
-  GHC == 7.10.3,
-  GHC == 8.0.1,
-  GHC == 8.2.1,
-  GHC == 8.4.1,
-  GHC == 8.6.1,
-  GHC == 8.8.1
-  GHC == 8.10.1
-homepage:            https://github.com/sdiehl/repline
-bug-Reports:         https://github.com/sdiehl/repline/issues
+  GHC ==7.6.1
+   || ==7.6.2
+   || ==7.6.3
+   || ==7.8.1
+   || ==7.8.2
+   || ==7.8.3
+   || ==7.8.4
+   || ==7.10.1
+   || ==7.10.2
+   || ==7.10.3
+   || ==8.0.1
+   || ==8.2.1
+   || ==8.4.1
+   || ==8.6.1
+   || ==8.8.1
+   || ==8.10.1
 
+homepage:           https://github.com/sdiehl/repline
+bug-reports:        https://github.com/sdiehl/repline/issues
 description:
   Haskeline wrapper for GHCi-like REPL interfaces. Composable with normal mtl transformers.
 
@@ -37,52 +37,54 @@ extra-source-files:
   README.md
   ChangeLog.md
 
-Source-Repository head
-    Type: git
-    Location: git@github.com:sdiehl/repline.git
+source-repository head
+  type:     git
+  location: git@github.com:sdiehl/repline.git
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     System.Console.Repline
-  ghc-options:         -Wall
+  hs-source-dirs:   src
+  exposed-modules:  System.Console.Repline
+  ghc-options:      -Wall
   build-depends:
-    base       >= 4.6  && <5.0,
-    haskeline  >= 0.8  && <0.9,
-    containers >= 0.5  && <0.7,
-    exceptions >= 0.10 && <0.11,
-    mtl        >= 2.2  && <2.3,
-    process    >= 1.2  && <2.0
-  if !impl(ghc >= 8.0)
-    Build-Depends: fail >= 4.9 && <4.10
-  default-language:    Haskell2010
+      base        >=4.6  && <5.0
+    , containers  >=0.5  && <0.7
+    , exceptions  >=0.10 && <0.11
+    , haskeline   >=0.8  && <0.9
+    , mtl         >=2.2  && <2.3
+    , process     >=1.2  && <2.0
+
+  if !impl(ghc >=8.0)
+    build-depends: fail ==4.9.*
+
+  default-language: Haskell2010
 
 test-suite prefix
-    type:       exitcode-stdio-1.0
-    main-is:    examples/Prefix.hs
-    default-language:    Haskell2010
-    build-depends: 
-      base,
-      mtl,
-      containers,
-      repline
+  type:             exitcode-stdio-1.0
+  main-is:          examples/Prefix.hs
+  default-language: Haskell2010
+  build-depends:
+      base
+    , containers
+    , mtl
+    , repline
 
 test-suite simple
-    type:       exitcode-stdio-1.0
-    main-is:    examples/Simple.hs
-    default-language:    Haskell2010
-    build-depends: 
-      base,
-      mtl,
-      containers,
-      process,
-      repline
+  type:             exitcode-stdio-1.0
+  main-is:          examples/Simple.hs
+  default-language: Haskell2010
+  build-depends:
+      base
+    , containers
+    , mtl
+    , process
+    , repline
 
 test-suite stateful
-    type:       exitcode-stdio-1.0
-    main-is:    examples/Stateful.hs
-    default-language:    Haskell2010
-    build-depends: 
-      base,
-      mtl,
-      containers,
-      repline
+  type:             exitcode-stdio-1.0
+  main-is:          examples/Stateful.hs
+  default-language: Haskell2010
+  build-depends:
+      base
+    , containers
+    , mtl
+    , repline
