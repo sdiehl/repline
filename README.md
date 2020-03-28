@@ -19,6 +19,32 @@ Examples
 * [Prefix](examples/Prefix.hs)
 * [Stateful](examples/Stateful.hs)
 
+Migration from 0.2.x
+--------------------
+
+The underlying `haskeline` library that provides readline support had a breaking
+API change in 0.8.0.0 which removed the bespoke
+`System.Console.Haskeline.MonadException` module in favour of using the
+`exceptions` package. This is a *much* better design and I strongly encourage
+upgrading. To migrate simply add the following bounds to your Cabal file.
+
+```yaml
+build-depends:
+  repline   >= 0.3.0.0
+  haskeline >= 0.8.0.0
+```
+
+You may also need to add the following to your `stack.yaml` file if using Stack.
+
+```yaml
+resolver: lts-15.0
+packages:
+  - .
+extra-deps:
+  - haskeline-0.8.0.0
+  - repline-0.3.0.0
+```
+
 Usage
 -----
 

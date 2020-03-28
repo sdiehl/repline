@@ -10,7 +10,23 @@ category:            User Interfaces
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
-tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3, GHC == 7.10.1
+tested-with:
+  GHC == 7.6.1,
+  GHC == 7.6.2,
+  GHC == 7.6.3,
+  GHC == 7.8.1,
+  GHC == 7.8.2,
+  GHC == 7.8.3,
+  GHC == 7.8.4,
+  GHC == 7.10.1,
+  GHC == 7.10.2,
+  GHC == 7.10.3,
+  GHC == 8.0.1,
+  GHC == 8.2.1,
+  GHC == 8.4.1,
+  GHC == 8.6.1,
+  GHC == 8.8.1
+  GHC == 8.10.1
 homepage:            https://github.com/sdiehl/repline
 bug-Reports:         https://github.com/sdiehl/repline/issues
 
@@ -43,6 +59,7 @@ library
 test-suite prefix
     type:       exitcode-stdio-1.0
     main-is:    examples/Prefix.hs
+    default-language:    Haskell2010
     build-depends: 
       base,
       mtl,
@@ -52,6 +69,7 @@ test-suite prefix
 test-suite simple
     type:       exitcode-stdio-1.0
     main-is:    examples/Simple.hs
+    default-language:    Haskell2010
     build-depends: 
       base,
       mtl,
@@ -62,6 +80,7 @@ test-suite simple
 test-suite stateful
     type:       exitcode-stdio-1.0
     main-is:    examples/Stateful.hs
+    default-language:    Haskell2010
     build-depends: 
       base,
       mtl,
