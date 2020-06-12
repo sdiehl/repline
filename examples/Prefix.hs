@@ -51,8 +51,11 @@ opts =
 inits :: Repl ()
 inits = return ()
 
+final :: Repl ExitDecision
+final = return Exit
+
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd opts Nothing (Prefix (wordCompleter byWord) defaultMatcher) inits
+repl = evalRepl (pure ">>> ") cmd opts Nothing (Prefix (wordCompleter byWord) defaultMatcher) inits final
 
 main :: IO ()
 main = pure ()
