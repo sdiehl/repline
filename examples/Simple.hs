@@ -42,17 +42,22 @@ final = do
 
 repl_alt :: IO ()
 repl_alt = evalReplOpts $ ReplOpts
-  { banner      = pure ">>> "
-  , command     = cmd
-  , options     = opts
-  , prefix      = Just ':'
-  , tabComplete = (Word0 completer)
-  , initialiser = ini
-  , finaliser   = final
+  { banner           = const $ pure ">>> "
+  , command          = cmd
+  , options          = opts
+  , prefix           = Just ':'
+  , multilineCommand = Just "paste"
+  , tabComplete      = (Word0 completer)
+  , initialiser      = ini
+  , finaliser        = final
   }
 
+customBanner :: MultiLine -> Repl String
+customBanner SingleLine = pure ">>> "
+customBanner MultiLine = pure "| "
+
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd opts (Just ':') (Word0 completer) ini final
+repl = evalRepl (const $ pure ">>> ") cmd opts (Just ':') (Just "paste") (Word0 completer) ini final
 
 main :: IO ()
 main = pure ()

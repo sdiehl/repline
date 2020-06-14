@@ -50,7 +50,7 @@ final1 = return Exit
 repl1 :: IO ()
 repl1 =
   flip evalStateT Set.empty $
-    evalRepl (pure "_proto> ") cmd1 opts1 (Just ':') (Word completer1) init1 final1
+    evalRepl (const $ pure "_proto> ") cmd1 opts1 (Just ':') Nothing (Word completer1) init1 final1
 
 -------------------------------------------------------------------------------
 -- Command options
@@ -84,7 +84,7 @@ final2 = do
   return Exit
 
 repl2 :: IO ()
-repl2 = evalRepl (pure "example2> ") cmd2 opts2 (Just ':') (Word comp2) init2 final2
+repl2 = evalRepl (const $ pure "example2> ") cmd2 opts2 (Just ':') Nothing (Word comp2) init2 final2
 
 -------------------------------------------------------------------------------
 -- Mixed Completion
@@ -130,7 +130,7 @@ final3 :: Repl3 ExitDecision
 final3 = return Exit
 
 repl3 :: IO ()
-repl3 = evalRepl (pure "example3> ") cmd3 opts3 (Just ':') (Prefix (wordCompleter byWord) defaultMatcher) init3 final3
+repl3 = evalRepl (const $ pure "example3> ") cmd3 opts3 (Just ':') Nothing (Prefix (wordCompleter byWord) defaultMatcher) init3 final3
 
 -------------------------------------------------------------------------------
 --

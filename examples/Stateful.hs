@@ -50,7 +50,7 @@ final = return Exit
 repl :: IO ()
 repl =
   flip evalStateT Set.empty $
-    evalRepl (pure ">>> ") cmd opts Nothing (Word comp) ini final
+    evalRepl (const $ pure ">>> ") cmd opts Nothing Nothing (Word comp) ini final
 
 main :: IO ()
 main = pure ()

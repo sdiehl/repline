@@ -55,7 +55,7 @@ final :: Repl ExitDecision
 final = return Exit
 
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd opts Nothing (Prefix (wordCompleter byWord) defaultMatcher) inits final
+repl = evalRepl (const $ pure ">>> ") cmd opts Nothing Nothing (Prefix (wordCompleter byWord) defaultMatcher) inits final
 
 main :: IO ()
 main = pure ()
