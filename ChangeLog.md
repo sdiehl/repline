@@ -1,6 +1,8 @@
 HEAD
 ====
 
+- Add multi-line input support
+
 0.3.0.0
 =======
 
