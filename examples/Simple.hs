@@ -35,6 +35,11 @@ opts =
 ini :: Repl ()
 ini = liftIO $ putStrLn "Welcome!"
 
+final :: Repl ExitDecision
+final = do
+  liftIO $ putStrLn "Goodbye!"
+  return Exit
+
 repl_alt :: IO ()
 repl_alt = evalReplOpts $ ReplOpts
   { banner      = pure ">>> "
@@ -43,10 +48,11 @@ repl_alt = evalReplOpts $ ReplOpts
   , prefix      = Just ':'
   , tabComplete = (Word0 completer)
   , initialiser = ini
+  , finaliser   = final
   }
 
 repl :: IO ()
-repl = evalRepl (pure ">>> ") cmd opts (Just ':') (Word0 completer) ini
+repl = evalRepl (pure ">>> ") cmd opts (Just ':') (Word0 completer) ini final
 
 main :: IO ()
 main = pure ()

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -25,9 +26,11 @@
 --
 --   * Command prefix character: Optional command prefix ( passing Nothing ignores the Options argument ).
 --
---   * Banner: Text Displayed at initialization.
+--   * Banner: Text Displayed at initialisation.
 --
---   * Initializer: Run at initialization.
+--   * Initialiser: Run at initialisation.
+--
+--   * Finaliser: Run on <Ctrl-D>, it can be used to output a custom exit message or to choose whether to exit or not depending on the application state
 --
 -- A simple evaluation function might simply echo the output back to the screen.
 --
@@ -130,6 +133,7 @@ module System.Console.Repline
     LineCompleter,
     CompleterStyle (..),
     Command,
+    ExitDecision (..),
 
     -- * Completers
     CompletionFunc, -- re-export
@@ -252,14 +256,19 @@ replLoop ::
   Options (HaskelineT m) ->
   -- | options prefix
   Maybe Char ->
+  -- | Finaliser ( runs on <Ctrl-D> )
+  HaskelineT m ExitDecision ->
   HaskelineT m ()
-replLoop banner cmdM opts optsPrefix = loop
+replLoop banner cmdM opts optsPrefix finalz = loop
   where
     loop = do
       prefix <- banner
       minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
       case minput of
-        Nothing -> outputStrLn "Goodbye."
+        Nothing ->
+          finalz >>= \case
+            Continue -> loop
+            Exit     -> exit
         Just "" -> loop
         Just (prefix_ : cmds)
           | null cmds -> handleInput [prefix_] >> loop
@@ -287,6 +296,11 @@ optMatcher s ((x, m) : xs) args
 -- Toplevel
 -------------------------------------------------------------------------------
 
+-- | Decide whether to exit the REPL or not
+data ExitDecision
+  = Continue -- ^ Keep the REPL open
+  | Exit     -- ^ Close the REPL and exit
+
 -- | REPL Options datatype
 data ReplOpts m
   = ReplOpts
@@ -301,7 +315,9 @@ data ReplOpts m
         -- | Tab completion function
         tabComplete :: CompleterStyle m,
         -- | Initialiser
-        initialiser :: HaskelineT m ()
+        initialiser :: HaskelineT m (),
+        -- | Finaliser ( runs on <Ctrl-D> )
+        finaliser :: HaskelineT m ExitDecision
       }
 
 -- | Evaluate the REPL logic into a MonadCatch context from the ReplOpts
@@ -315,6 +331,7 @@ evalReplOpts ReplOpts {..} =
     prefix
     tabComplete
     initialiser
+    finaliser
 
 -- | Evaluate the REPL logic into a MonadCatch context.
 evalRepl ::
@@ -332,10 +349,12 @@ evalRepl ::
   CompleterStyle m ->
   -- | Initialiser
   HaskelineT m a ->
+  -- | Finaliser ( runs on Ctrl-D )
+  HaskelineT m ExitDecision ->
   m ()
-evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz >> monad)
+evalRepl banner cmd opts optsPrefix comp initz finalz = runHaskelineT _readline (initz >> monad)
   where
-    monad = replLoop banner cmd opts optsPrefix
+    monad = replLoop banner cmd opts optsPrefix finalz
     _readline =
       H.Settings
         { H.complete = mkCompleter comp,
@@ -343,7 +362,7 @@ evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz 
           H.autoAddHistory = True
         }
 
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Completions
 -------------------------------------------------------------------------------
 

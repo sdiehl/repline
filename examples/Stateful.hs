@@ -43,11 +43,14 @@ opts =
 ini :: Repl ()
 ini = return ()
 
+final :: Repl ExitDecision
+final = return Exit
+
 -- Tab completion inside of StateT
 repl :: IO ()
 repl =
   flip evalStateT Set.empty $
-    evalRepl (pure ">>> ") cmd opts Nothing (Word comp) ini
+    evalRepl (pure ">>> ") cmd opts Nothing (Word comp) ini final
 
 main :: IO ()
 main = pure ()
