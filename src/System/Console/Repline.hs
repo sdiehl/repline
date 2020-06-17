@@ -221,7 +221,18 @@ instance (MonadHaskeline m) => MonadHaskeline (StateT s m) where
 -------------------------------------------------------------------------------
 
 -- | Command function synonym
-type Cmd m = [String] -> m ()
+--
+-- The argument corresponds to the arguments of the command, it may contain
+-- spaces or newlines (when input is multi-line).
+--
+-- For example, with prefix @':'@ and command @"command"@ the argument 'String' for:
+--
+-- @
+-- :command some arguments
+-- @
+--
+-- is @"some arguments"@
+type Cmd m = String -> m ()
 
 -- | Options function synonym
 type Options m = [(String, Cmd m)]
@@ -284,12 +295,15 @@ replLoop banner cmdM opts optsPrefix multiCommand finalz = loop
           | Just prefix_ == optsPrefix ->
             case words cmds of
               [] -> loop
-              (cmd : _args)
+              (cmd : _)
                 | Just cmd == multiCommand -> do
                   outputStrLn "-- Entering multi-line mode. Press <Ctrl-D> to finish."
                   loopMultiLine []
-              (cmd : args) -> do
-                let optAction = optMatcher cmd opts args
+              (cmd : _) -> do
+                let -- If there are any arguments, cmd is followed by a
+                    -- whitespace character (space, newline, ...)
+                    arguments = drop (1 + length cmd) cmds
+                let optAction = optMatcher cmd opts arguments
                 result <- H.handleInterrupt (return Nothing) $ Just <$> optAction
                 maybe exit (const loop) result
         Just input -> do
@@ -307,7 +321,7 @@ replLoop banner cmdM opts optsPrefix multiCommand finalz = loop
     exit = return ()
 
 -- | Match the options.
-optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
+optMatcher :: MonadHaskeline m => String -> Options m -> String -> m ()
 optMatcher s [] _ = outputStrLn $ "No such command :" ++ s
 optMatcher s ((x, m) : xs) args
   | s `isPrefixOf` x = m args
