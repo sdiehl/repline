@@ -21,14 +21,14 @@ completer n = do
 help :: [String] -> Repl ()
 help args = liftIO $ print $ "Help: " ++ show args
 
-say :: [String] -> Repl ()
+say :: String -> Repl ()
 say args = do
-  _ <- liftIO $ callCommand $ "cowsay" ++ " " ++ (unwords args)
+  _ <- liftIO $ callCommand $ "cowsay" ++ " " ++ args
   return ()
 
-opts :: [(String, [String] -> Repl ())]
+opts :: [(String, String -> Repl ())]
 opts =
-  [ ("help", help), -- :help
+  [ ("help", help . words), -- :help
     ("say", say) -- :say
   ]
 
