@@ -260,35 +260,29 @@ dontCrash m = catch m (\e@SomeException {} -> liftIO (print e))
 abort :: MonadThrow m => HaskelineT m a
 abort = throwM H.Interrupt
 
+
 -- | Completion loop.
 replLoop ::
-  (Functor m, MonadMask m, MonadIO m) =>
-  -- | banner function
-  (MultiLine -> HaskelineT m String) ->
-  -- | command function
-  Command (HaskelineT m) ->
-  -- | options function
-  Options (HaskelineT m) ->
-  -- | options prefix
-  Maybe Char ->
-  -- | multi-line command
-  Maybe String ->
-  -- | Finaliser ( runs on <Ctrl-D> )
-  HaskelineT m ExitDecision ->
-  HaskelineT m ()
+  (Functor m, MonadMask m, MonadIO m)
+  => (MultiLine -> HaskelineT m String) -- ^ Banner function
+  -> Command (HaskelineT m) -- ^ Command function
+  -> Options (HaskelineT m) -- ^ options function
+  -> Maybe Char -- ^ options prefix
+  -> Maybe String -- ^ multi-line command
+  -> HaskelineT m ExitDecision -- ^ Finaliser ( runs on <Ctrl-D> )
+  -> HaskelineT m ()
 replLoop banner cmdM opts optsPrefix multiCommand finalz = loop
   where
     loop = do
       prefix <- banner SingleLine
       minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
       handleCommands minput
-
     handleCommands minput =
       case minput of
         Nothing ->
           finalz >>= \case
             Continue -> loop
-            Exit     -> exit
+            Exit -> exit
         Just "" -> loop
         Just (prefix_ : cmds)
           | null cmds -> handleInput [prefix_] >> loop
@@ -309,14 +303,12 @@ replLoop banner cmdM opts optsPrefix multiCommand finalz = loop
         Just input -> do
           handleInput input
           loop
-
     loopMultiLine prevs = do
       prefix <- banner MultiLine
       minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
       case minput of
         Nothing -> handleCommands . Just . unlines $ reverse prevs
-        Just x  -> loopMultiLine $ x : prevs
-
+        Just x -> loopMultiLine $ x : prevs
     handleInput input = H.handleInterrupt exit $ cmdM input
     exit = return ()
 
@@ -333,32 +325,33 @@ optMatcher s ((x, m) : xs) args
 
 -- | Decide whether to exit the REPL or not
 data ExitDecision
-  = Continue -- ^ Keep the REPL open
-  | Exit     -- ^ Close the REPL and exit
+  = -- | Keep the REPL open
+    Continue
+  | -- | Close the REPL and exit
+    Exit
 
 -- | Context for the current line if it is part of a multi-line input or not
 data MultiLine = MultiLine | SingleLine deriving (Eq, Show)
 
 -- | REPL Options datatype
-data ReplOpts m
-  = ReplOpts
-      { -- | Banner
-        banner :: MultiLine -> HaskelineT m String,
-        -- | Command function
-        command :: Command (HaskelineT m),
-        -- | Options list and commands
-        options :: Options (HaskelineT m),
-        -- | Optional command prefix ( passing Nothing ignores the Options argument )
-        prefix :: Maybe Char,
-        -- | Optional multi-line command ( passing Nothing disables multi-line support )
-        multilineCommand :: Maybe String,
-        -- | Tab completion function
-        tabComplete :: CompleterStyle m,
-        -- | Initialiser
-        initialiser :: HaskelineT m (),
-        -- | Finaliser ( runs on <Ctrl-D> )
-        finaliser :: HaskelineT m ExitDecision
-      }
+data ReplOpts m = ReplOpts
+  { -- | Banner
+    banner :: MultiLine -> HaskelineT m String,
+    -- | Command function
+    command :: Command (HaskelineT m),
+    -- | Options list and commands
+    options :: Options (HaskelineT m),
+    -- | Optional command prefix ( passing Nothing ignores the Options argument )
+    prefix :: Maybe Char,
+    -- | Optional multi-line command ( passing Nothing disables multi-line support )
+    multilineCommand :: Maybe String,
+    -- | Tab completion function
+    tabComplete :: CompleterStyle m,
+    -- | Initialiser
+    initialiser :: HaskelineT m (),
+    -- | Finaliser ( runs on <Ctrl-D> )
+    finaliser :: HaskelineT m ExitDecision
+  }
 
 -- | Evaluate the REPL logic into a MonadCatch context from the ReplOpts
 -- configuration.
@@ -374,27 +367,19 @@ evalReplOpts ReplOpts {..} =
     initialiser
     finaliser
 
+
 -- | Evaluate the REPL logic into a MonadCatch context.
 evalRepl ::
-  (MonadMask m, MonadIO m) => -- Terminal monad ( often IO ).
-
-  -- | Banner
-  (MultiLine -> HaskelineT m String) ->
-  -- | Command function
-  Command (HaskelineT m) ->
-  -- | Options list and commands
-  Options (HaskelineT m) ->
-  -- | Optional command prefix ( passing Nothing ignores the Options argument )
-  Maybe Char ->
-  -- | Optional multi-line command ( passing Nothing disables multi-line support )
-  Maybe String ->
-  -- | Tab completion function
-  CompleterStyle m ->
-  -- | Initialiser
-  HaskelineT m a ->
-  -- | Finaliser ( runs on Ctrl-D )
-  HaskelineT m ExitDecision ->
-  m ()
+  (MonadMask m, MonadIO m)
+  => (MultiLine -> HaskelineT m String) -- ^ Banner
+  -> Command (HaskelineT m) -- ^ Command function
+  -> Options (HaskelineT m) -- ^ Options list and commands
+  -> Maybe Char -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
+  -> Maybe String -- ^ Optional multi-line command ( passing Nothing disables multi-line support )
+  -> CompleterStyle m -- ^ Tab completion function
+  -> HaskelineT m a -- ^ Initialiser
+  -> HaskelineT m ExitDecision -- ^ Finaliser ( runs on Ctrl-D )
+  -> m ()
 evalRepl banner cmd opts optsPrefix multiCommand comp initz finalz = runHaskelineT _readline (initz >> monad)
   where
     monad = replLoop banner cmd opts optsPrefix multiCommand finalz
