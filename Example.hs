@@ -34,10 +34,10 @@ help1 args = liftIO $ print $ "Help!" ++ show args
 puts1 :: [String] -> Repl1 ()
 puts1 args = modify $ Set.union (Set.fromList args)
 
-opts1 :: [(String, [String] -> Repl1 ())]
+opts1 :: [(String, String -> Repl1 ())]
 opts1 =
-  [ ("help", help1), -- :help
-    ("puts", puts1) -- :puts
+  [ ("help", help1 . words), -- :help
+    ("puts", puts1 . words) -- :puts
   ]
 
 init1 :: Repl1 ()
@@ -70,9 +70,9 @@ comp2 = listWordCompleter ["kirk", "spock", "mccoy"]
 help2 :: [String] -> Repl2 ()
 help2 args = liftIO $ print $ "Help!" ++ show args
 
-opts2 :: [(String, [String] -> Repl2 ())]
+opts2 :: [(String, String -> Repl2 ())]
 opts2 =
-  [ ("help", help2)
+  [ ("help", help2 . words)
   ]
 
 init2 :: Repl2 ()
@@ -107,17 +107,17 @@ byWord n = do
   let names = ["picard", "riker", "data", ":file", ":holiday"]
   return $ filter (isPrefixOf n) names
 
-files :: [String] -> Repl3 ()
+files :: String -> Repl3 ()
 files args = liftIO $ do
-  contents <- readFile (unwords args)
+  contents <- readFile args
   putStrLn contents
 
-holidays :: [String] -> Repl3 ()
-holidays [] = liftIO $ putStrLn "Enter a holiday."
+holidays :: String -> Repl3 ()
+holidays "" = liftIO $ putStrLn "Enter a holiday."
 holidays xs = liftIO $ do
-  putStrLn $ "Happy " ++ unwords xs ++ "!"
+  putStrLn $ "Happy " ++ xs ++ "!"
 
-opts3 :: [(String, [String] -> Repl3 ())]
+opts3 :: [(String, String -> Repl3 ())]
 opts3 =
   [ ("file", files),
     ("holiday", holidays)

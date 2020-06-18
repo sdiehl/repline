@@ -32,17 +32,17 @@ byWord n = do
   let names = ["picard", "riker", "data", ":file", ":holiday"]
   return $ filter (isPrefixOf n) names
 
-files :: [String] -> Repl ()
+files :: String -> Repl ()
 files args = liftIO $ do
-  contents <- readFile (unwords args)
+  contents <- readFile args
   putStrLn contents
 
-holidays :: [String] -> Repl ()
-holidays [] = liftIO $ putStrLn "Enter a holiday."
+holidays :: String -> Repl ()
+holidays "" = liftIO $ putStrLn "Enter a holiday."
 holidays xs = liftIO $ do
-  putStrLn $ "Happy " ++ unwords xs ++ "!"
+  putStrLn $ "Happy " ++ xs ++ "!"
 
-opts :: [(String, [String] -> Repl ())]
+opts :: [(String, String -> Repl ())]
 opts =
   [ ("file", files),
     ("holiday", holidays)

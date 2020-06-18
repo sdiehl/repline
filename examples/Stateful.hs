@@ -34,10 +34,10 @@ help args = liftIO $ print $ "Help!" ++ show args
 puts :: [String] -> Repl ()
 puts args = modify . fmap $ \s -> Set.union s (Set.fromList args)
 
-opts :: [(String, [String] -> Repl ())]
+opts :: [(String, String -> Repl ())]
 opts =
-  [ ("help", help), -- :help
-    ("puts", puts) -- :puts
+  [ ("help", help . words), -- :help
+    ("puts", puts . words) -- :puts
   ]
 
 ini :: Repl ()
