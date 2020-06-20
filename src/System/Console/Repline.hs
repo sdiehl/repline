@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -25,9 +26,13 @@
 --
 --   * Command prefix character: Optional command prefix ( passing Nothing ignores the Options argument ).
 --
---   * Banner: Text Displayed at initialization.
+--   * Multi-line command: Optional command name that switches to a multi-line input. (Press <Ctrl-D> to exit and commit the multi-line input). Passing Nothing disables multi-line input support.
 --
---   * Initializer: Run at initialization.
+--   * Banner: Text Displayed at initialisation. It takes an argument so it can take into account if the current line is part of a multi-line input.
+--
+--   * Initialiser: Run at initialisation.
+--
+--   * Finaliser: Run on <Ctrl-D>, it can be used to output a custom exit message or to choose whether to exit or not depending on the application state
 --
 -- A simple evaluation function might simply echo the output back to the screen.
 --
@@ -66,7 +71,7 @@
 -- >   , ("say", say)    -- :say
 -- >   ]
 --
--- The banner function is simply an IO action that is called at the start of the shell.
+-- The initialiser function is simply an IO action that is called at the start of the shell.
 --
 -- > ini :: Repl ()
 -- > ini = liftIO $ putStrLn "Welcome!"
@@ -81,12 +86,13 @@
 --
 -- > main_alt :: IO ()
 -- > main_alt = evalReplOpts $ ReplOpts
--- >   { banner      = pure ">>> "
--- >   , command     = cmd
--- >   , options     = opts
--- >   , prefix      = Just ':'
--- >   , tabComplete = (Word0 completer)
--- >   , initialiser = ini
+-- >   { banner           = const (pure ">>> ")
+-- >   , command          = cmd
+-- >   , options          = opts
+-- >   , prefix           = Just ':'
+-- >   , multilineCommand = Nothing
+-- >   , tabComplete      = (Word0 completer)
+-- >   , initialiser      = ini
 -- >   }
 --
 -- Putting this in a file we can test out our cow-trek shell.
@@ -130,6 +136,8 @@ module System.Console.Repline
     LineCompleter,
     CompleterStyle (..),
     Command,
+    ExitDecision (..),
+    MultiLine (..),
 
     -- * Completers
     CompletionFunc, -- re-export
@@ -213,7 +221,18 @@ instance (MonadHaskeline m) => MonadHaskeline (StateT s m) where
 -------------------------------------------------------------------------------
 
 -- | Command function synonym
-type Cmd m = [String] -> m ()
+--
+-- The argument corresponds to the arguments of the command, it may contain
+-- spaces or newlines (when input is multi-line).
+--
+-- For example, with prefix @':'@ and command @"command"@ the argument 'String' for:
+--
+-- @
+-- :command some arguments
+-- @
+--
+-- is @"some arguments"@
+type Cmd m = String -> m ()
 
 -- | Options function synonym
 type Options m = [(String, Cmd m)]
@@ -241,43 +260,60 @@ dontCrash m = catch m (\e@SomeException {} -> liftIO (print e))
 abort :: MonadThrow m => HaskelineT m a
 abort = throwM H.Interrupt
 
+
 -- | Completion loop.
 replLoop ::
-  (Functor m, MonadMask m, MonadIO m) =>
-  -- | banner function
-  HaskelineT m String ->
-  -- | command function
-  Command (HaskelineT m) ->
-  -- | options function
-  Options (HaskelineT m) ->
-  -- | options prefix
-  Maybe Char ->
-  HaskelineT m ()
-replLoop banner cmdM opts optsPrefix = loop
+  (Functor m, MonadMask m, MonadIO m)
+  => (MultiLine -> HaskelineT m String) -- ^ Banner function
+  -> Command (HaskelineT m) -- ^ Command function
+  -> Options (HaskelineT m) -- ^ options function
+  -> Maybe Char -- ^ options prefix
+  -> Maybe String -- ^ multi-line command
+  -> HaskelineT m ExitDecision -- ^ Finaliser ( runs on <Ctrl-D> )
+  -> HaskelineT m ()
+replLoop banner cmdM opts optsPrefix multiCommand finalz = loop
   where
     loop = do
-      prefix <- banner
+      prefix <- banner SingleLine
       minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
+      handleCommands minput
+    handleCommands minput =
       case minput of
-        Nothing -> outputStrLn "Goodbye."
+        Nothing ->
+          finalz >>= \case
+            Continue -> loop
+            Exit -> exit
         Just "" -> loop
         Just (prefix_ : cmds)
           | null cmds -> handleInput [prefix_] >> loop
           | Just prefix_ == optsPrefix ->
             case words cmds of
               [] -> loop
-              (cmd : args) -> do
-                let optAction = optMatcher cmd opts args
+              (cmd : _)
+                | Just cmd == multiCommand -> do
+                  outputStrLn "-- Entering multi-line mode. Press <Ctrl-D> to finish."
+                  loopMultiLine []
+              (cmd : _) -> do
+                let -- If there are any arguments, cmd is followed by a
+                    -- whitespace character (space, newline, ...)
+                    arguments = drop (1 + length cmd) cmds
+                let optAction = optMatcher cmd opts arguments
                 result <- H.handleInterrupt (return Nothing) $ Just <$> optAction
                 maybe exit (const loop) result
         Just input -> do
           handleInput input
           loop
+    loopMultiLine prevs = do
+      prefix <- banner MultiLine
+      minput <- H.handleInterrupt (return (Just "")) $ getInputLine prefix
+      case minput of
+        Nothing -> handleCommands . Just . unlines $ reverse prevs
+        Just x -> loopMultiLine $ x : prevs
     handleInput input = H.handleInterrupt exit $ cmdM input
     exit = return ()
 
 -- | Match the options.
-optMatcher :: MonadHaskeline m => String -> Options m -> [String] -> m ()
+optMatcher :: MonadHaskeline m => String -> Options m -> String -> m ()
 optMatcher s [] _ = outputStrLn $ "No such command :" ++ s
 optMatcher s ((x, m) : xs) args
   | s `isPrefixOf` x = m args
@@ -287,22 +323,35 @@ optMatcher s ((x, m) : xs) args
 -- Toplevel
 -------------------------------------------------------------------------------
 
+-- | Decide whether to exit the REPL or not
+data ExitDecision
+  = -- | Keep the REPL open
+    Continue
+  | -- | Close the REPL and exit
+    Exit
+
+-- | Context for the current line if it is part of a multi-line input or not
+data MultiLine = MultiLine | SingleLine deriving (Eq, Show)
+
 -- | REPL Options datatype
-data ReplOpts m
-  = ReplOpts
-      { -- | Banner
-        banner :: HaskelineT m String,
-        -- | Command function
-        command :: Command (HaskelineT m),
-        -- | Options list and commands
-        options :: Options (HaskelineT m),
-        -- | Optional command prefix ( passing Nothing ignores the Options argument )
-        prefix :: Maybe Char,
-        -- | Tab completion function
-        tabComplete :: CompleterStyle m,
-        -- | Initialiser
-        initialiser :: HaskelineT m ()
-      }
+data ReplOpts m = ReplOpts
+  { -- | Banner
+    banner :: MultiLine -> HaskelineT m String,
+    -- | Command function
+    command :: Command (HaskelineT m),
+    -- | Options list and commands
+    options :: Options (HaskelineT m),
+    -- | Optional command prefix ( passing Nothing ignores the Options argument )
+    prefix :: Maybe Char,
+    -- | Optional multi-line command ( passing Nothing disables multi-line support )
+    multilineCommand :: Maybe String,
+    -- | Tab completion function
+    tabComplete :: CompleterStyle m,
+    -- | Initialiser
+    initialiser :: HaskelineT m (),
+    -- | Finaliser ( runs on <Ctrl-D> )
+    finaliser :: HaskelineT m ExitDecision
+  }
 
 -- | Evaluate the REPL logic into a MonadCatch context from the ReplOpts
 -- configuration.
@@ -313,29 +362,27 @@ evalReplOpts ReplOpts {..} =
     command
     options
     prefix
+    multilineCommand
     tabComplete
     initialiser
+    finaliser
+
 
 -- | Evaluate the REPL logic into a MonadCatch context.
 evalRepl ::
-  (MonadMask m, MonadIO m) => -- Terminal monad ( often IO ).
-
-  -- | Banner
-  HaskelineT m String ->
-  -- | Command function
-  Command (HaskelineT m) ->
-  -- | Options list and commands
-  Options (HaskelineT m) ->
-  -- | Optional command prefix ( passing Nothing ignores the Options argument )
-  Maybe Char ->
-  -- | Tab completion function
-  CompleterStyle m ->
-  -- | Initialiser
-  HaskelineT m a ->
-  m ()
-evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz >> monad)
+  (MonadMask m, MonadIO m)
+  => (MultiLine -> HaskelineT m String) -- ^ Banner
+  -> Command (HaskelineT m) -- ^ Command function
+  -> Options (HaskelineT m) -- ^ Options list and commands
+  -> Maybe Char -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
+  -> Maybe String -- ^ Optional multi-line command ( passing Nothing disables multi-line support )
+  -> CompleterStyle m -- ^ Tab completion function
+  -> HaskelineT m a -- ^ Initialiser
+  -> HaskelineT m ExitDecision -- ^ Finaliser ( runs on Ctrl-D )
+  -> m ()
+evalRepl banner cmd opts optsPrefix multiCommand comp initz finalz = runHaskelineT _readline (initz >> monad)
   where
-    monad = replLoop banner cmd opts optsPrefix
+    monad = replLoop banner cmd opts optsPrefix multiCommand finalz
     _readline =
       H.Settings
         { H.complete = mkCompleter comp,
@@ -343,7 +390,7 @@ evalRepl banner cmd opts optsPrefix comp initz = runHaskelineT _readline (initz 
           H.autoAddHistory = True
         }
 
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Completions
 -------------------------------------------------------------------------------
 

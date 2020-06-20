@@ -1,6 +1,12 @@
 HEAD
 ====
 
+0.4.0.0
+=======
+
+- Add multi-line input support
+- Add finaliser option to control REPL exit on <Ctrl-D>
+
 0.3.0.0
 =======
 
