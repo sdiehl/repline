@@ -1,7 +1,7 @@
 Repline
 -------
 
-[![Build Status](https://travis-ci.org/sdiehl/repline.svg)](https://travis-ci.org/sdiehl/repline)
+[![Build Status](https://travis-ci.org/sdiehl/repline.svg?branch=master)](https://travis-ci.org/sdiehl/repline)
 [![Hackage](https://img.shields.io/hackage/v/repline.svg)](https://hackage.haskell.org/package/repline)
 
 Slightly higher level wrapper for creating GHCi-like REPL monads that are composable with normal MTL
