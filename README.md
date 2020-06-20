@@ -18,6 +18,46 @@ Examples
 * [Simple](examples/Simple.hs)
 * [Prefix](examples/Prefix.hs)
 * [Stateful](examples/Stateful.hs)
+* [Multiline](examples/MultiLine.hs)
+
+Migration from 0.3.x
+--------------------
+
+This release adds two parameters to the `ReplOpts` constructor and `evalRepl` function.
+
+* `finaliser`
+* `multilineCommand`
+
+The `finaliser` function is a function run when the Repl monad is is exited.
+
+```haskell
+-- | Decide whether to exit the REPL or not
+data ExitDecision
+  = Continue -- | Keep the REPL open
+  | Exit     -- | Close the REPL and exit
+```
+
+For example:
+
+```haskell
+final :: Repl ExitDecision
+final = do
+  liftIO $ putStrLn "Goodbye!"
+  return Exit
+```
+
+The `multilineCommand` argument takes a command which invokes a multiline edit
+mode in which the user can paste/enter text across multiple lines terminating
+with a Ctrl-D / EOF. This can be used in conjunction with a customBanner
+function to indicate the entry mode.
+
+```haskell
+customBanner :: MultiLine -> Repl String
+customBanner SingleLine = pure ">>> "
+customBanner MultiLine = pure "| "
+```
+
+See [Multiline](examples/MultiLine.hs) for a complete example.
 
 Migration from 0.2.x
 --------------------
