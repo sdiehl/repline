@@ -76,6 +76,13 @@
 -- > ini :: Repl ()
 -- > ini = liftIO $ putStrLn "Welcome!"
 --
+-- The finaliser function is an IO action that is called at the end of the shell.
+--
+-- final :: Repl ExitDecision
+-- final = do
+--   liftIO $ putStrLn "Goodbye!"
+--   return Exit
+--
 -- Putting it all together we have a little shell.
 --
 -- > main :: IO ()
@@ -93,6 +100,7 @@
 -- >   , multilineCommand = Nothing
 -- >   , tabComplete      = (Word0 completer)
 -- >   , initialiser      = ini
+-- >   , finaliser        = final
 -- >   }
 --
 -- Putting this in a file we can test out our cow-trek shell.
@@ -260,17 +268,22 @@ dontCrash m = catch m (\e@SomeException {} -> liftIO (print e))
 abort :: MonadThrow m => HaskelineT m a
 abort = throwM H.Interrupt
 
-
 -- | Completion loop.
 replLoop ::
-  (Functor m, MonadMask m, MonadIO m)
-  => (MultiLine -> HaskelineT m String) -- ^ Banner function
-  -> Command (HaskelineT m) -- ^ Command function
-  -> Options (HaskelineT m) -- ^ options function
-  -> Maybe Char -- ^ options prefix
-  -> Maybe String -- ^ multi-line command
-  -> HaskelineT m ExitDecision -- ^ Finaliser ( runs on <Ctrl-D> )
-  -> HaskelineT m ()
+  (Functor m, MonadMask m, MonadIO m) =>
+  -- | Banner function
+  (MultiLine -> HaskelineT m String) ->
+  -- | Command function
+  Command (HaskelineT m) ->
+  -- | options function
+  Options (HaskelineT m) ->
+  -- | options prefix
+  Maybe Char ->
+  -- | multi-line command
+  Maybe String ->
+  -- | Finaliser ( runs on <Ctrl-D> )
+  HaskelineT m ExitDecision ->
+  HaskelineT m ()
 replLoop banner cmdM opts optsPrefix multiCommand finalz = loop
   where
     loop = do
@@ -367,19 +380,26 @@ evalReplOpts ReplOpts {..} =
     initialiser
     finaliser
 
-
 -- | Evaluate the REPL logic into a MonadCatch context.
 evalRepl ::
-  (MonadMask m, MonadIO m)
-  => (MultiLine -> HaskelineT m String) -- ^ Banner
-  -> Command (HaskelineT m) -- ^ Command function
-  -> Options (HaskelineT m) -- ^ Options list and commands
-  -> Maybe Char -- ^ Optional command prefix ( passing Nothing ignores the Options argument )
-  -> Maybe String -- ^ Optional multi-line command ( passing Nothing disables multi-line support )
-  -> CompleterStyle m -- ^ Tab completion function
-  -> HaskelineT m a -- ^ Initialiser
-  -> HaskelineT m ExitDecision -- ^ Finaliser ( runs on Ctrl-D )
-  -> m ()
+  (MonadMask m, MonadIO m) =>
+  -- | Banner
+  (MultiLine -> HaskelineT m String) ->
+  -- | Command function
+  Command (HaskelineT m) ->
+  -- | Options list and commands
+  Options (HaskelineT m) ->
+  -- | Optional command prefix ( passing Nothing ignores the Options argument )
+  Maybe Char ->
+  -- | Optional multi-line command ( passing Nothing disables multi-line support )
+  Maybe String ->
+  -- | Tab completion function
+  CompleterStyle m ->
+  -- | Initialiser
+  HaskelineT m a ->
+  -- | Finaliser ( runs on Ctrl-D )
+  HaskelineT m ExitDecision ->
+  m ()
 evalRepl banner cmd opts optsPrefix multiCommand comp initz finalz = runHaskelineT _readline (initz >> monad)
   where
     monad = replLoop banner cmd opts optsPrefix multiCommand finalz
