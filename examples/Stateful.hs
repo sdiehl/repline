@@ -6,6 +6,7 @@ module Main (main, repl) where
 
 import Control.Monad.State.Strict
 import Data.List (isPrefixOf)
+import Data.Monoid
 import qualified Data.Set as Set
 import System.Console.Repline
 
@@ -47,11 +48,11 @@ final :: Repl ExitDecision
 final = do
   (count, s) <- get
   if count == 0
-  then return Exit
-  else do
-    liftIO . putStrLn $ "Exit in " <> show count <> "..."
-    put (count - 1, s)
-    return Continue
+    then return Exit
+    else do
+      liftIO . putStrLn $ "Exit in " <> show count <> "..."
+      put (count - 1, s)
+      return Continue
 
 -- Tab completion inside of StateT
 repl :: IO ()
