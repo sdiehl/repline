@@ -18,7 +18,7 @@ Examples
 * [Simple](examples/Simple.hs)
 * [Prefix](examples/Prefix.hs)
 * [Stateful](examples/Stateful.hs)
-* [Multiline](examples/MultiLine.hs)
+* [Multiline](examples/Multiline.hs)
 
 Migration from 0.3.x
 --------------------
@@ -57,7 +57,7 @@ customBanner SingleLine = pure ">>> "
 customBanner MultiLine = pure "| "
 ```
 
-See [Multiline](examples/MultiLine.hs) for a complete example.
+See [Multiline](examples/Multiline.hs) for a complete example.
 
 Migration from 0.2.x
 --------------------
