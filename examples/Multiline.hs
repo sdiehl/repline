@@ -2,6 +2,7 @@ module Main (main, repl) where
 
 import Control.Monad.Trans
 import Data.List (isPrefixOf)
+import Data.Monoid
 import System.Console.Repline
 import System.Process (callCommand)
 
