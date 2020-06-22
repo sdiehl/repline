@@ -9,7 +9,7 @@ transformers. Mostly exists because I got tired of implementing the same interfa
 over and decided to canonize the giant pile of hacks that I use to make Haskeline work.
 
 See
-[Documentation](https://hackage.haskell.org/package/repline-0.2.2.0/docs/System-Console-Repline.html)
+[Documentation](https://hackage.haskell.org/package/repline-0.4.0.0/docs/System-Console-Repline.html)
 for more detailed usage.
 
 Examples
