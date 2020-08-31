@@ -58,17 +58,21 @@
 -- > help :: [String] -> Repl ()
 -- > help args = liftIO $ print $ "Help: " ++ show args
 -- >
--- > say :: [String] -> Repl ()
--- > say args = do
--- >   _ <- liftIO $ system $ "cowsay" ++ " " ++ (unwords args)
+-- > say :: String -> Repl ()
+-- > say arg = do
+-- >   _ <- liftIO $ callCommand $ "cowsay" ++ " " ++ arg
 -- >   return ()
+--
+-- (You may need the following import in pull `callCommand` into scope)
+--
+-- > import System.Process (callCommand)
 --
 -- Now we need only map these functions to their commands.
 --
--- > options :: [(String, [String] -> Repl ())]
+-- > options :: Options (HaskelineT IO)
 -- > options = [
--- >     ("help", help)  -- :help
--- >   , ("say", say)    -- :say
+-- >     ("help", help . words)  -- :help
+-- >   , ("say", say)            -- :say
 -- >   ]
 --
 -- The initialiser function is simply an IO action that is called at the start of the shell.
@@ -78,15 +82,16 @@
 --
 -- The finaliser function is an IO action that is called at the end of the shell.
 --
--- final :: Repl ExitDecision
--- final = do
---   liftIO $ putStrLn "Goodbye!"
---   return Exit
+-- > final :: Repl ExitDecision
+-- > final = do
+-- >   liftIO $ putStrLn "Goodbye!"
+-- >   return Exit
 --
 -- Putting it all together we have a little shell.
 --
 -- > main :: IO ()
--- > main = evalRepl (pure ">>> ") cmd options (Just ':') (Word completer) ini
+-- > main = evalRepl (const . pure $ ">>> ") cmd options (Just ':') (Just "paste") (Word completer) ini final
+
 --
 -- Alternatively instead of initialising the repl from position arguments you
 -- can pass the 'ReplOpts' record with explicitly named arguments.
