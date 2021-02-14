@@ -136,6 +136,7 @@ module System.Console.Repline
   ( -- * Repline Monad
     HaskelineT,
     runHaskelineT,
+    MonadHaskeline,
 
     -- * Toplevel
     evalRepl,
