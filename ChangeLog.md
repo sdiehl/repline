@@ -1,6 +1,12 @@
 HEAD
 ====
 
+0.4.1.0
+=======
+
+- Fix up documentation.
+- Export `MonadHaskeline` from System.Control.Repline.
+
 0.4.0.0
 =======
 
