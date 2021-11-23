@@ -172,6 +172,8 @@ where
 
 import Control.Monad.Catch
 import Control.Monad.Fail as Fail
+import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Data.List (isPrefixOf)
