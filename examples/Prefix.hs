@@ -4,6 +4,7 @@
 
 module Main (main, repl) where
 
+import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.State.Strict
 import Data.List (isPrefixOf)
 import qualified Data.Set as Set
