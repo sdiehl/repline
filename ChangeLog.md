@@ -1,6 +1,12 @@
 HEAD
 ====
 
+0.4.2.0
+=======
+
+- Add support for ghc 9.0, 9.2
+- CI: Drop Travis and use Github Actions instead
+
 0.4.1.0
 =======
 
