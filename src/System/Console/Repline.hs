@@ -176,6 +176,7 @@ import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.Reader
 import Control.Monad.State.Strict
+import Data.Kind (Type)
 import Data.List (isPrefixOf)
 import qualified System.Console.Haskeline as H
 import System.Console.Haskeline.Completion
@@ -185,7 +186,7 @@ import System.Console.Haskeline.Completion
 -------------------------------------------------------------------------------
 
 -- | Monad transformer for readline input
-newtype HaskelineT (m :: * -> *) a = HaskelineT {unHaskeline :: H.InputT m a}
+newtype HaskelineT (m :: Type -> Type) a = HaskelineT {unHaskeline :: H.InputT m a}
   deriving
     ( Monad,
       Functor,
