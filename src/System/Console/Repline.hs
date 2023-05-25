@@ -207,7 +207,7 @@ runHaskelineT s m = H.runInputT s (H.withInterrupt (unHaskeline m))
 
 -- | Apply a transformation to the unerlying monad
 mapHaskelineT :: (forall x. m x -> m x) -> HaskelineT m a -> HaskelineT m a
-mapHaskelineT f (HaskelineT s) = HaskelineT (f s)
+mapHaskelineT f (HaskelineT s) = HaskelineT (H.mapInputT f s)
 
 class MonadCatch m => MonadHaskeline m where
   getInputLine :: String -> m (Maybe String)
