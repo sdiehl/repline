@@ -4,6 +4,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -136,6 +137,7 @@ module System.Console.Repline
   ( -- * Repline Monad
     HaskelineT,
     runHaskelineT,
+    mapHaskelineT,
     MonadHaskeline,
 
     -- * Toplevel
@@ -202,6 +204,10 @@ newtype HaskelineT (m :: * -> *) a = HaskelineT {unHaskeline :: H.InputT m a}
 -- | Run HaskelineT monad
 runHaskelineT :: (MonadMask m, MonadIO m) => H.Settings m -> HaskelineT m a -> m a
 runHaskelineT s m = H.runInputT s (H.withInterrupt (unHaskeline m))
+
+-- | Apply a transformation to the unerlying monad
+mapHaskelineT :: (forall x. m x -> m x) -> HaskelineT m a -> HaskelineT m a
+mapHaskelineT f (HaskelineT s) = HaskelineT (H.mapInputT f s)
 
 class MonadCatch m => MonadHaskeline m where
   getInputLine :: String -> m (Maybe String)
