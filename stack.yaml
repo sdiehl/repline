@@ -1,7 +1,6 @@
-resolver: lts-14.27
+resolver: nightly-2025-01-04
 packages:
 - '.'
-extra-deps:
-- haskeline-0.8.0.0
+extra-deps: []
 flags: {}
 extra-package-dbs: []
