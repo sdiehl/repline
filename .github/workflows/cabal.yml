@@ -9,21 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ghc: ['9.2', '9.0.1', '8.10.7', '8.10.1', '8.8.1', '8.6.5', '8.6.4', '8.6.3', '8.6.2', '8.4.4', '8.2.2']
-        cabal: ['latest', 3.2]
+        ghc: ['9.12', '9.10', '9.8', '9.6', '9.4', '9.2', '9.0', '8.10', '8.8', '8.6', '8.4', '8.2']
+        cabal: ['latest']
       fail-fast: false
     env:
       CONFIG: "--enable-tests --enable-benchmarks"
     steps:
-      - uses: actions/checkout@v2
-      - uses: haskell/actions/setup@v1.2
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: ${{ matrix.cabal }}
       - run: cabal v2-update
       - run: cabal v2-freeze $CONFIG
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ${{ steps.setuphaskell-cabal.outputs.cabal-store }}
