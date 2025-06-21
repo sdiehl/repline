@@ -1,5 +1,5 @@
 name:               repline
-version:            0.4.2.0
+version:            0.4.3.0
 synopsis:           Haskeline wrapper for GHCi-like REPL interfaces.
 license:            MIT
 license-file:       LICENSE
